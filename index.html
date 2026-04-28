@@ -16,11 +16,11 @@
   <link rel="preconnect" href="https://www.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
-  <!-- CACHE BUSTER v26 — must be first script. Evicts stale SW caches after deploy. -->
+  <!-- CACHE BUSTER v28 — must be first script. Evicts stale SW caches after deploy. -->
   <script>
     (function () {
       // Current expected SW version — bump this with every deploy
-      var EXPECTED_SW_VERSION = 'wakeit-v26';
+      var EXPECTED_SW_VERSION = 'wakeit-v28';
       if ('serviceWorker' in navigator && 'caches' in window) {
         // Delete any cache that is NOT the current version
         caches.keys().then(function (keys) {

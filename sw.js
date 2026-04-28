@@ -5,7 +5,7 @@
    OneSignal runs in its own isolated scope (/push/onesignal/).
 ================================================ */
 
-const CACHE_NAME = 'wakeit-v27'; // v27 = pushed to GitHub, Vercel GitHub deploy
+const CACHE_NAME = 'wakeit-v28'; // v28 = never cache supabase.co requests
 const ASSETS = [
   '/manifest.json',
   '/icon-192.png',
@@ -36,6 +36,12 @@ self.addEventListener('activate', (event) => {
 
 /* ── Fetch: network-first for navigation, cache-first for assets ── */
 self.addEventListener('fetch', (event) => {
+  // ── CRITICAL: Never intercept Supabase API calls — always hit network directly ──
+  if (event.request.url.includes('supabase.co')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith(self.location.origin)) return;
 
