@@ -3759,9 +3759,15 @@
           setTimeout(() => checkTrialExpiry(), 500);
           // Check for missed alarms (delayed so it doesn't block UI)
           setTimeout(() => checkMissedAlarms(), 2000);
-          // If on a settings route, refresh to get real user data
+          // Re-init data-driven screens that may have rendered before auth resolved.
+          // This covers the page-refresh race: onAuthStateChange fires after
+          // initGroups/initHome already ran with a null user, so we re-run them here.
           const h = window.location.hash;
-          if (h === '#/settings') {
+          if (h === '#/groups') {
+            initGroups();
+          } else if (h === '#/home') {
+            loadHomeAlarms();
+          } else if (h === '#/settings') {
             initScreen('#/settings');
           }
         } else {
@@ -5002,16 +5008,43 @@
       async function initGroups() {
         AppHeader('groups-header', 'My Groups', false, null, false);
         BottomNav('groups-nav', 'groups');
-        const uid = getCurrentUserId();
-        if (!uid) return;
+
+        // Auth guard: ensure session is confirmed before fetching.
+        // On page refresh, AppState.user may not be set yet if onAuthStateChange
+        // hasn't fired. Fall back to getSafeSession() to guarantee auth.
+        let uid = getCurrentUserId();
+        if (!uid) {
+          const session = await getSafeSession();
+          if (session) {
+            AppState.user = session.user;
+            uid = session.user.id;
+          }
+        }
+        if (!uid) {
+          console.warn('[Wakeit] initGroups: no user — redirecting to login');
+          navigate('#/login');
+          return;
+        }
+
         const list = document.getElementById('groups-list');
         // Skeleton loader
         if (list) list.innerHTML = `
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>`;
 
-        const { data: memberships } = await db.from('group_members')
+        const { data: memberships, error: memErr } = await db.from('group_members')
           .select('group_id').eq('user_id', uid);
+
+        if (memErr) {
+          console.error('[Wakeit] initGroups memberships fetch error:', memErr.message);
+          if (list) list.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <div class="empty-title">Couldn't load groups</div>
+          <div class="empty-sub">Check your connection and pull to refresh.</div>
+        </div>`;
+          return;
+        }
+
         if (!memberships?.length) {
           if (list) list.innerHTML = `<div class="empty-state">
           <div class="empty-icon">👥</div>
@@ -5021,7 +5054,16 @@
           return;
         }
         const groupIds = memberships.map(m => m.group_id);
-        const { data: groups } = await db.from('groups').select('*').in('id', groupIds);
+        const { data: groups, error: grpErr } = await db.from('groups').select('*').in('id', groupIds);
+        if (grpErr) {
+          console.error('[Wakeit] initGroups groups fetch error:', grpErr.message);
+          if (list) list.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <div class="empty-title">Couldn't load groups</div>
+          <div class="empty-sub">Check your connection and pull to refresh.</div>
+        </div>`;
+          return;
+        }
         if (list) list.innerHTML = (groups || []).map(g => `
         <div class="group-card" onclick="openGroupDetail('${g.id}')">
           <span class="group-emoji">${g.emoji || '⏰'}</span>
