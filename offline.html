@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Wakeit - Offline</title>
+  <style>
+    :root {
+      --bg: #1A0F2B;
+      --text: #ffffff;
+      --primary: #C84BFF;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    p {
+      color: #aaa;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+    .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    button {
+      margin-top: 30px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 20px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon">📡</div>
+  <h1>You are offline</h1>
+  <p>Wakeit requires an internet connection to sync your group alarms. Please check your connection and try again.</p>
+  <button onclick="window.location.reload()">Retry</button>
+</body>
+</html>

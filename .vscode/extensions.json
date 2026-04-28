@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    // Deno language server — REQUIRED to remove red errors on supabase/functions/*.ts
+    "denoland.vscode-deno"
+  ]
+}

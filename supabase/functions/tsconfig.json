@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    // Deno target — not Node.js
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM"],
+    "strict": true,
+    "noEmit": true,
+    // Tell TypeScript to allow jsr: and npm: specifiers without complaining
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    // These types cover Deno.serve, Deno.env, etc.
+    "types": []
+  },
+  "exclude": [
+    "../../node_modules"
+  ]
+}

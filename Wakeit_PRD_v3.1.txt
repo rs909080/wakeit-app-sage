@@ -1,0 +1,2020 @@
+﻿WAKEIT
+
+Product Requirements Document  v3.1
+
+Group Alarm Sync Â· SMS-Confirm Dismiss Â· Admin Wake Dashboard
+
+Field Value App Name Wakeit Version 3.1 Updated April 2026 Stack HTML + CSS + Vanilla JavaScript Builder Antigravity Deployment Vercel (Web) â†’ PWA â†’ Capacitor (Android + iOS) Backend Supabase (Auth + DB + Storage + Realtime) SMS Gateway Twilio (inbound SMS webhook) Payments Razorpay Notifications OneSignal 
+
+âš¡ ANTIGRAVITY MASTER INSTRUCTION â€” READ BEFORE DOING ANYTHING
+
+Read this ENTIRE PRD before writing a single line of code.
+
+Build ONE stage at a time. Test every feature. Fix all bugs before moving to the next stage.
+
+Every section has a number (e.g. 3.2, 6.4). When told 'fix 6.4' â€” go ONLY to that section.
+
+Use ONLY HTML + CSS + JavaScript (vanilla). No React. No Vue. No frameworks. No exceptions.
+
+ALL navigation must use hash-based routing (#/screen-name). Critical for Vercel â€” page routing causes 404 on refresh.
+
+Build as a single index.html. All screens are hidden divs. Show/hide using the JS router. Never use separate HTML files.
+
+After every stage: run the bug checklist in Section 13 for that stage before proceeding.
+
+NEW in v3: Twilio inbound SMS webhook is handled by a Supabase Edge Function â€” not by the frontend. The frontend listens via Realtime for status updates.
+
+SECTION 0 â€” PROJECT OVERVIEW
+
+0.1  App Summary
+
+Wakeit is a group alarm sync app. One person (the admin) sets an alarm with a custom tone and it rings on every group member's device simultaneously. The alarm cannot be dismissed by tapping a button â€” each member must send a real SMS to the Wakeit system number to confirm they are awake. The admin gets a live dashboard showing who has woken up and who is still sleeping.
+
+0.2  Core Features
+
+Group-based alarm sync via 6-digit invite code
+
+Custom alarm tones: upload audio file or record voice message
+
+Sync online, ring offline (alarm data and tone cached locally after sync)
+
+Auto day/night theme switching based on device time (6AMâ€“6PM day, else night)
+
+SMS-confirm dismiss: alarm only stops when the member sends an SMS to the Wakeit Twilio number
+
+Admin wake dashboard: real-time view of who is awake vs still sleeping, with Awake/Sleeping filter tabs
+
+Admin nudge: admin can send a follow-up push buzz to any sleeping member â€” that is the only admin action
+
+0.3  Monetization
+
+Plan Price Groups Members/Group SMS Dismiss Tones Trial â‚¹25 one-time 1 group Max 5 âœ… Enabled Basic only Pro â‚¹499/year Unlimited Max 20 âœ… Enabled Upload + Voice 
+
+âš ï¸  SMS dismiss is a core feature â€” available on both Trial and Pro plans.
+
+0.4  Full Tech Stack
+
+Frontend:       HTML + CSS + JavaScript (vanilla)
+
+Routing:        Hash-based (#/screen-name) â€” mandatory for Vercel
+
+Builder:        Antigravity
+
+Deployment:     Vercel
+
+PWA:            manifest.json + service worker
+
+Mobile:         Capacitor (wrap for Android + iOS after web is perfected)
+
+Auth:           Supabase Auth (email + Google OAuth)
+
+Database:       Supabase PostgreSQL
+
+Realtime:       Supabase Realtime (alarm sync + wake status updates)
+
+Storage:        Supabase Storage (audio files)
+
+Payments:       Razorpay (â‚¹25 trial + â‚¹499/year)
+
+Notifications:  OneSignal (push notifications)
+
+SMS Inbound:    Twilio (members SMS a virtual number to dismiss alarm)
+
+SMS Webhook:    Supabase Edge Function (receives Twilio POST, updates DB)
+
+Local Alarms:   Web Notifications API + Service Worker
+
+0.5  Why Hash Routing (Critical)
+
+Previous Vercel deployment failed because page-based routing returns 404 on refresh. Hash routing (#/home, #/login) never triggers a server request â€” it works on Vercel with zero config. Every single navigation MUST use hash routing. No exceptions.
+
+0.6  How SMS Dismiss Works (Architecture)
+
+This is the most important feature. Understand the full flow before building:
+
+Admin creates a group. A dedicated Twilio virtual phone number is assigned to the group and stored in the groups table (or one shared Twilio number is used for all groups, with the group identified by the sender's registered phone number).
+
+Admin sets an alarm. All group members receive it via Supabase Realtime. Each member's device schedules the alarm locally.
+
+At alarm time, every member's alarm screen rings. The screen shows: the Twilio number to SMS, the required message text (e.g. 'WAKE'), and a live countdown.
+
+Member opens their native SMS app (link opens it pre-filled), sends the SMS.
+
+Twilio receives the SMS and POSTs to the Supabase Edge Function webhook URL.
+
+The Edge Function looks up the sender's phone number in the profiles table, identifies which alarm is active for their group, and updates the alarm_wake_status table: status = 'awake' for that user.
+
+Supabase Realtime fires a change event. All group members (including the sender) see the wake dashboard update in real time.
+
+On the sender's device: the frontend is subscribed to their own wake status row. When it flips to 'awake', the alarm audio stops and the screen navigates to #/home automatically.
+
+On the admin's screen: the wake dashboard updates live â€” the member moves from the Sleeping list to the Awake list. Admin cannot dismiss anyone else's alarm â€” each person's alarm stops only when they personally SMS.
+
+SECTION 1 â€” DESIGN SYSTEM
+
+âš ï¸  Apply to every screen. Never deviate. Both themes must look correct on all 15 screens.
+
+1.1  Design Language
+
+Day theme (6AMâ€“6PM): Neumorphism â€” soft shadows, raised surfaces, green palette
+
+Night theme (6PMâ€“6AM): Glassmorphism â€” frosted cards, purple glow, dark background
+
+Circular hero element: clock dial on create-alarm screen
+
+Feeling: calm, sleep-friendly, smooth, premium, non-aggressive
+
+1.2  Auto Theme Logic
+
+function getTheme() {
+
+  const hour = new Date().getHours();
+
+  return (hour >= 6 && hour < 18) ? 'day' : 'night';
+
+}
+
+// Apply on app load and re-check every 60 seconds
+
+// Add class 'theme-day' or 'theme-night' to document.body
+
+1.3  CSS Variables â€” Day Theme
+
+.theme-day {
+
+  --primary: #4CD964;
+
+  --gradient-start: #A8F0C6;
+
+  --gradient-end: #4CD964;
+
+  --bg: #F2F5F3;
+
+  --card-bg: #FFFFFF;
+
+  --text-primary: #1C1C1E;
+
+  --text-secondary: #8E8E93;
+
+  --shadow-light: rgba(255,255,255,0.8);
+
+  --shadow-dark: rgba(0,0,0,0.08);
+
+  --border: rgba(0,0,0,0.06);
+
+  --toggle-inactive: #D1D1D6;
+
+  --danger: #FF3B30;
+
+  --warning: #FF9500;
+
+  --awake-color: #4CD964;
+
+  --sleeping-color: #FF9500;
+
+}
+
+1.4  CSS Variables â€” Night Theme
+
+.theme-night {
+
+  --primary: #C84BFF;
+
+  --gradient-start: #7A1FA2;
+
+  --gradient-end: #C84BFF;
+
+  --bg: #1A0F2B;
+
+  --card-bg: rgba(255,255,255,0.05);
+
+  --text-primary: #FFFFFF;
+
+  --text-secondary: #B8A9C9;
+
+  --shadow-light: rgba(255,255,255,0.03);
+
+  --shadow-dark: rgba(0,0,0,0.5);
+
+  --border: rgba(255,255,255,0.08);
+
+  --glow: rgba(200,75,255,0.4);
+
+  --deep-bg: #2C0E3F;
+
+  --toggle-inactive: #3A3A4A;
+
+  --danger: #FF453A;
+
+  --warning: #FFD60A;
+
+  --awake-color: #30D158;
+
+  --sleeping-color: #FFD60A;
+
+}
+
+1.5  Typography
+
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+--text-xs:   12px;   /* helper text */
+
+--text-sm:   14px;   /* labels */
+
+--text-base: 16px;   /* body */
+
+--text-lg:   20px;   /* screen titles - weight 600 */
+
+--text-xl:   24px;   /* section headers - weight 600 */
+
+--text-time: 40px;   /* big time display - weight 700 */
+
+--text-sms:  14px;   /* SMS number display - weight 600, monospace */
+
+1.6  Spacing, Radius, Shadows â€” same as v2
+
+/* Spacing (8px grid) */
+
+--space-1: 8px; --space-2: 12px; --space-3: 16px;
+
+--space-4: 20px; --space-5: 24px; --space-6: 32px;
+
+/* Border Radius */
+
+--radius-sm: 12px; --radius-md: 20px; --radius-lg: 28px; --radius-full: 999px;
+
+/* Day (Neumorphism) */
+
+--shadow-neu: 6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.8);
+
+--shadow-neu-inset: inset 4px 4px 8px rgba(0,0,0,0.06), inset -4px -4px 8px rgba(255,255,255,0.7);
+
+/* Night (Glow) */
+
+--shadow-glow: 0 0 20px rgba(200,75,255,0.4), 0 10px 30px rgba(0,0,0,0.5);
+
+--shadow-awake-glow: 0 0 16px rgba(76,217,100,0.5);
+
+--shadow-sleeping-glow: 0 0 16px rgba(255,149,0,0.5);
+
+1.7  Reusable Component Functions (build first, reuse everywhere)
+
+AppHeader(title, showBack, showSettings)
+
+AlarmCard(alarm)
+
+GroupCard(group)
+
+GradientButton(label, onclick)
+
+OutlineButton(label, onclick)
+
+DangerButton(label, onclick)
+
+ToggleSwitch(id, checked, onchange)
+
+BottomNav(activeTab)
+
+PillTabs(options, active)
+
+OTPInput(digits=6)
+
+PaywallCard(plan)
+
+EmptyState(icon, title, subtitle, ctaLabel, ctaAction)
+
+Toast(message, type)  // type: success | error | info | warning
+
+MemberStatusRow(member, status)  // status: awake | sleeping | pending
+
+SMSInstructionCard(twilioNumber, messageText)  // shown on alarm ringing screen
+
+WakeDashboardCard(alarmId)  // admin-only component on group detail
+
+SECTION 2 â€” ROUTING SYSTEM
+
+2.1  All Routes (15 screens)
+
+const routes = {
+
+  '#/splash':            'screen-splash',
+
+  '#/onboarding':        'screen-onboarding',
+
+  '#/login':             'screen-login',
+
+  '#/paywall':           'screen-paywall',
+
+  '#/home':              'screen-home',
+
+  '#/create-alarm':      'screen-create-alarm',
+
+  '#/tone-picker':       'screen-tone-picker',
+
+  '#/groups':            'screen-groups',
+
+  '#/create-group':      'screen-create-group',
+
+  '#/group-detail':      'screen-group-detail',
+
+  '#/join-group':        'screen-join-group',
+
+  '#/settings':          'screen-settings',
+
+  '#/alarm-ringing':     'screen-alarm-ringing',
+
+  '#/wake-dashboard':    'screen-wake-dashboard',   // NEW â€” admin only
+
+  '#/phone-setup':       'screen-phone-setup',     // NEW â€” phone number registration
+
+};
+
+2.2  Navigation Guard
+
+function authGuard(hash) {
+
+  const publicRoutes = ['#/splash','#/onboarding','#/login','#/paywall'];
+
+  const adminOnlyRoutes = ['#/wake-dashboard'];
+
+  const session = supabase.auth.getSession();
+
+  const hasPaid = localStorage.getItem('wakeit_plan');
+
+  const isAdmin = AppState.currentGroup?.owner_id === getCurrentUserId();
+
+  if (!publicRoutes.includes(hash)) {
+
+    if (!session) { navigate('#/login'); return false; }
+
+    if (!hasPaid) { navigate('#/paywall'); return false; }
+
+  }
+
+  if (adminOnlyRoutes.includes(hash) && !isAdmin) {
+
+    navigate('#/home'); return false;
+
+  }
+
+  return true;
+
+}
+
+2.3  Global App State
+
+const AppState = {
+
+  currentGroup: null,      // full group object when viewing group detail
+
+  editingAlarm: null,      // alarm object when editing
+
+  selectedTone: null,      // tone object from tone picker
+
+  ringingAlarm: null,      // alarm object currently ringing
+
+  alarmAudio: null,        // Audio object (so we can stop it)
+
+  wakeStatuses: {},        // { userId: 'awake'|'sleeping'|'pending' }
+
+};
+
+SECTION 3 â€” FILE STRUCTURE
+
+3.1  Single File Architecture
+
+index.html              â† entire frontend app
+
+  <head>
+
+    CSS variables + base styles
+
+    Google Fonts (Inter)
+
+  <body>
+
+    <!-- All 15 screens as hidden divs -->
+
+    <div id='screen-splash' class='screen'>...</div>
+
+    ... (all 15 screens)
+
+    <!-- Toast container -->
+
+    <div id='toast-container'></div>
+
+  <script>
+
+    // 1. Config (Supabase, Twilio number, OneSignal)
+
+    // 2. Supabase client init
+
+    // 3. Design system (theme switcher)
+
+    // 4. Router + auth guard
+
+    // 5. Reusable component functions
+
+    // 6. Screen init functions (one per screen)
+
+    // 7. App init (called on load)
+
+3.2  PWA Files
+
+manifest.json           â† PWA manifest
+
+sw.js                   â† Service worker (caching + offline alarms + push handler)
+
+icon-192.png
+
+icon-512.png
+
+vercel.json             â† Rewrites safety net
+
+SECTION 4 â€” STAGE 1: COMPLETE FRONTEND (15 SCREENS)
+
+âš ï¸  Build all 15 screens with full design system. Static/dummy data only. No backend calls. Every screen must look perfect in both day and night themes before moving to Stage 2.
+
+4.1  S-01 â€” Splash  #/splash
+
+Full screen gradient background (day or night)
+
+Center: Wakeit logo (48px, weight 800, white)
+
+Below logo: tagline 'Wake up together.' (16px, secondary color)
+
+Night: moon illustration with purple glow; Day: soft green radial glow
+
+Bottom: thin pulsing progress bar (primary color)
+
+function initSplash() {
+
+  applyTheme();
+
+  setTimeout(() => {
+
+    const session = supabase.auth.getSession();
+
+    const plan = localStorage.getItem('wakeit_plan');
+
+    const phone = localStorage.getItem('wakeit_phone_verified');
+
+    if (session && plan && phone) navigate('#/home');
+
+    else if (session && plan) navigate('#/phone-setup');
+
+    else if (localStorage.getItem('wakeit_onboarded')) navigate('#/login');
+
+    else navigate('#/onboarding');
+
+  }, 2000);
+
+}
+
+4.2  S-02 â€” Onboarding  #/onboarding
+
+3 swipeable slides. CSS transform + JS swipe. Dot indicators. Skip top-right. Next pill button. Last slide: 'Get Started' â†’ navigate('#/login').
+
+Slide 1: Group of phone icons ringing. 'One alarm for everyone.' | 'Set it once. Your whole group wakes up.'
+
+Slide 2: Audio wave + mic. 'Your voice, your alarm.' | 'Upload audio or record a custom tone.'
+
+Slide 3: SMS bubble icon. 'Wake up confirmed.' | 'Send an SMS to prove you're awake. No sneaky snoozes.'
+
+4.3  S-03 â€” Login / Signup  #/login
+
+Top: Wakeit logo (32px)
+
+Pill tab: Sign Up | Log In
+
+Sign Up fields: Name, Phone Number, Email, Password, Confirm Password
+
+Log In fields: Email, Password
+
+GradientButton: 'Create Account' / 'Log In'
+
+'or continue with' divider + Google outline button
+
+'Forgot Password?' text link (log in tab only)
+
+âš ï¸  Phone number is collected at signup because it is required for SMS dismiss lookup. Format: +91XXXXXXXXXX
+
+Dummy behavior (Stage 1): Button tap â†’ navigate('#/paywall')
+
+4.4  S-04 â€” Paywall  #/paywall
+
+Title: 'Choose your plan' (24px, 700)
+
+Subtitle: 'Start with a trial or go all-in.'
+
+Trial Card: 'TRY IT' pill | â‚¹25 (40px bold) | 'One-time payment' | 7-day access, 1 group, 5 members, basic tones, SMS dismiss | OutlineButton: 'Start Trial'
+
+Pro Card (highlighted): 'BEST VALUE' pill (gradient) | â‚¹499 (40px bold) | 'Per year' | Unlimited groups, 20 members, custom audio, voice recording, snooze-all, SMS dismiss | GradientButton: 'Go Pro'
+
+Bottom: 'ðŸ”’ Secure payment via Razorpay'
+
+Dummy behavior (Stage 1): Either button â†’ navigate('#/home')
+
+4.5  S-05 â€” Home  #/home
+
+AppHeader('Wakeit', false, true)
+
+[Sleep card]
+
+  Day: sun + 'Good morning' + date
+
+  Night: moon + 'Good night' + date
+
+[Next alarm card â€” large]
+
+  Time: '07:30 AM' (40px bold)
+
+  Label: 'Morning Squad'
+
+  ToggleSwitch (on)
+
+  SMS status badge: '3/5 awake' (shown after alarm fired)
+
+[Section title: 'All Alarms']
+
+[AlarmCard Ã— 3 dummy]
+
+  { time:'07:30 AM', group:'Morning Squad', tone:'Default', active:true }
+
+  { time:'09:00 AM', group:'Trip Crew', tone:'Birds', active:false }
+
+  { time:'06:00 AM', group:'Gym Bro', tone:'Voice Note', active:true }
+
+[FAB: '+' bottom right, circular, gradient]
+
+BottomNav(activeTab: 'alarms')
+
+4.6  S-06 â€” Create Alarm  #/create-alarm
+
+AppHeader('New Alarm', true, false)
+
+[TimeDial â€” circular SVG]
+
+  Outer arc (progress, primary color)
+
+  12 tick marks
+
+  Draggable knob (primary color circle)
+
+  Center: selected time (40px bold)
+
+  Below center: AM/PM toggle pills
+
+  Mouse + touch events. Smooth animation.
+
+[Options cards]
+
+  'Alarm for' â†’ group name â†’ tap = group picker modal
+
+  'Tone'      â†’ 'Default' â†’ 'Change >' â†’ navigate('#/tone-picker')
+
+  'Snooze'    â†’ ToggleSwitch (disabled â€” snooze not available with SMS dismiss)
+
+  'Repeat'    â†’ 'Once' â†’ tap = repeat picker modal
+
+[GradientButton: 'Set Alarm']
+
+âš ï¸  Snooze is disabled in v3. Alarm can only be dismissed by SMS. Show tooltip: 'Snooze unavailable â€” alarm dismisses by SMS only.'
+
+4.7  S-07 â€” Tone Picker  #/tone-picker
+
+AppHeader('Choose Tone', true, false)
+
+[Section: 'Default Tones']
+
+  ðŸ”” Classic Beep | ðŸ¦ Morning Birds | ðŸŒŠ Gentle Rise | ðŸ“³ Digital Buzz
+
+  Each row: icon + name + play button + radio select
+
+[Section: 'Custom Tones' â€” Pro badge]
+
+  ðŸ“ Upload audio (.mp3 .m4a .wav)
+
+  ðŸŽ™ Record voice (opens recorder UI, 30s max)
+
+[Selected tone shown at bottom with checkmark]
+
+[GradientButton: 'Use This Tone']
+
+4.8  S-08 â€” Groups  #/groups
+
+AppHeader('My Groups', false, false)
+
+[GroupCard Ã— 2 dummy] + Empty state
+
+[Bottom] OutlineButton: 'Join a Group' | GradientButton: 'Create Group'
+
+BottomNav(activeTab: 'groups')
+
+4.9  S-09 â€” Create Group  #/create-group
+
+AppHeader('New Group', true, false)
+
+[Input: 'Group name']
+
+[Emoji selector: â°ðŸŒ…ðŸ•ðŸŽ‰ðŸ‹ðŸš—ðŸŽ“ðŸŒ™]
+
+[Info card: 'Trial: max 5 members Â· Pro: max 20 members']
+
+[GradientButton: 'Create Group']
+
+[Success state after creation]
+
+  Title: 'Group created! ðŸŽ‰'
+
+  Big 6-digit code (letter-spaced, bold, primary)
+
+  Sub: 'Share this code with your group'
+
+  Twilio number display: 'Members SMS this number to dismiss alarm:'
+
+  +91-XXXXXXXXXX  (large, monospace, primary color, tap to copy)
+
+  ShareButton: 'Share Code' (Web Share API)
+
+  Button: 'Go to Group' â†’ navigate('#/group-detail')
+
+4.10  S-10 â€” Group Detail  #/group-detail
+
+AppHeader(groupName, true, true)
+
+[Group info card]
+
+  Group name (large) + 'X members Â· X active alarms'
+
+  Invite code + copy icon
+
+  Twilio SMS number + copy icon
+
+[Members section]
+
+  MemberStatusRow Ã— N (avatar initials + name + Admin badge)
+
+  '+ Invite' row
+
+[Group Alarms section]
+
+  AlarmCard Ã— N for this group
+
+[ADMIN ONLY: Wake Dashboard button]
+
+  GradientButton: 'View Wake Dashboard' â†’ navigate('#/wake-dashboard')
+
+[GradientButton: 'Set Alarm for This Group']
+
+[Danger zone]
+
+  DangerButton: 'Leave Group' (non-owner)
+
+  Red text: 'Delete Group' (owner only)
+
+4.11  S-11 â€” Join Group  #/join-group
+
+AppHeader('Join a Group', true, false)
+
+[Instruction: 'Enter the 6-digit code from your group admin']
+
+[OTP-style 6-box input â€” auto-focus, paste support]
+
+[GradientButton: 'Join Group']
+
+[Error state: red text 'Code not found. Please check and try again.']
+
+4.12  S-12 â€” Settings  #/settings
+
+AppHeader('Settings', false, false)
+
+[Account card]
+
+  Avatar + name + email
+
+  'Edit Profile' | 'Change Password'
+
+[Phone card]  â† NEW
+
+  Registered phone number
+
+  'Change Number' â†’ navigate('#/phone-setup')
+
+[Subscription card]
+
+  Plan badge + 'Upgrade to Pro â†’' (if trial) | 'Manage Subscription'
+
+[Preferences card]
+
+  'Notifications' + ToggleSwitch
+
+  'Theme' + 'Auto (Day/Night)'
+
+[About card]
+
+  App Version | Privacy Policy | Terms | Rate Wakeit â­
+
+[Bottom] OutlineButton: 'Log Out' (red) | 'Delete Account' (small red text)
+
+BottomNav(activeTab: 'settings')
+
+4.13  S-13 â€” Alarm Ringing  #/alarm-ringing
+
+âš ï¸  This is the most critical screen. No header. No nav. Full screen. Cannot be dismissed by tapping.
+
+[Full screen â€” gradient background, no header, no nav]
+
+[Center]
+
+  Animated bell icon (CSS shake animation, loops)
+
+  Night: pulsing glow rings (CSS keyframes)
+
+  Current time (48px bold white)
+
+  'Ringing for: Morning Squad' (16px secondary)
+
+[SMS Dismiss Card â€” prominent, cannot be missed]
+
+  Title: 'To stop this alarm:'
+
+  Step 1: 'Open your SMS app'
+
+  Step 2: 'SMS the word WAKE to:'
+
+  +91-XXXXXXXXXX  (large monospace, primary color, tap to copy)
+
+  [Button: 'Open SMS App' â†’ opens sms:+91XXXXXXXXXX?body=WAKE]
+
+  Hint: 'Alarm stops the moment your SMS is received'
+
+[Live status bar â€” scrollable]
+
+  Shows all members: green checkmark (awake) | orange clock (sleeping)
+
+  Your own status updates in real time when SMS is received
+
+// Alarm ringing JS behavior
+
+function initAlarmRinging() {
+
+  const alarm = AppState.ringingAlarm;
+
+  playAlarmAudio(alarm.tone_url);
+
+  renderMemberStatusBar(alarm.group_id);
+
+  subscribeToMyWakeStatus(alarm.id);  // listen for own status flip
+
+}
+
+function subscribeToMyWakeStatus(alarmId) {
+
+  const userId = getCurrentUserId();
+
+  sb.channel('my-wake-status')
+
+    .on('postgres_changes', {
+
+      event: 'UPDATE',
+
+      schema: 'public',
+
+      table: 'alarm_wake_status',
+
+      filter: `alarm_id=eq.${alarmId}`,
+
+    }, payload => {
+
+      if (payload.new.user_id === userId && payload.new.status === 'awake') {
+
+        stopAlarmAudio();
+
+        navigate('#/home');
+
+        showToast('Good morning! ðŸŒ…', 'success');
+
+      }
+
+    }).subscribe();
+
+}
+
+4.14  S-14 â€” Wake Dashboard  #/wake-dashboard  [ADMIN ONLY]
+
+âš ï¸  Only admin (group creator) can access this screen. Auth guard enforces this. Admin can VIEW and NUDGE only â€” admin cannot stop anyone else's alarm.
+
+AppHeader('Wake Dashboard', true, false)
+
+[Alarm info card]
+
+  Group name + alarm time
+
+  'X of Y members awake'  (auto-updates via Realtime)
+
+[Filter pill tabs]
+
+  [All Members]  [Awake âœ…]  [Still Sleeping ðŸ˜´]
+
+[Member list â€” filtered by active tab]
+
+  MemberStatusRow for each member:
+
+    Awake:    green badge 'âœ… Awake' + time they SMS'd
+
+    Sleeping: orange badge 'ðŸ˜´ Sleeping' + duration since alarm fired
+
+[Per sleeping member â€” ONE action only]
+
+  [ðŸ”” Nudge] â†’ sends a push notification buzz to that member's device
+
+    After nudge sent: button changes to 'âœ… Nudged' and disables for 2 minutes
+
+    (prevents admin from spamming the same person)
+
+// NOTE: There is NO 'Mark Awake' button. NO 'Dismiss All' button.
+
+// Each member's alarm stops ONLY when they personally send the SMS.
+
+// Admin power is limited to: view + nudge.
+
+4.15  S-15 â€” Phone Setup  #/phone-setup
+
+âš ï¸  Required after signup and payment, before accessing the app. Phone is needed for SMS dismiss lookup.
+
+AppHeader('Your Phone Number', false, false)
+
+[Explanation card]
+
+  Icon: ðŸ“±
+
+  'Your phone number is used only to verify your alarm dismissal SMS.'
+
+  'We never share it or send marketing messages.'
+
+[Input: phone number â€” +91 prefix shown, numeric input]
+
+[GradientButton: 'Verify & Continue']
+
+// On submit: save to profiles.phone in Supabase
+
+// Set localStorage 'wakeit_phone_verified' = true
+
+// navigate('#/home')
+
+SECTION 5 â€” STAGE 2: PWA SETUP
+
+âš ï¸  Add PWA support. Complete Stage 1 first.
+
+5.1  manifest.json
+
+{
+
+  'name': 'Wakeit',
+
+  'short_name': 'Wakeit',
+
+  'description': 'Group alarm sync â€” wake up confirmed by SMS',
+
+  'start_url': '/',
+
+  'display': 'standalone',
+
+  'background_color': '#1A0F2B',
+
+  'theme_color': '#C84BFF',
+
+  'orientation': 'portrait',
+
+  'icons': [
+
+    { 'src': 'icon-192.png', 'sizes': '192x192', 'type': 'image/png' },
+
+    { 'src': 'icon-512.png', 'sizes': '512x512', 'type': 'image/png' }
+
+  ]
+
+}
+
+5.2  Service Worker (sw.js)
+
+const CACHE = 'wakeit-v3';
+
+const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png'];
+
+self.addEventListener('install', e => {
+
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+
+});
+
+self.addEventListener('fetch', e => {
+
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+
+});
+
+// Push: alarm ring trigger
+
+self.addEventListener('push', e => {
+
+  const data = e.data.json();
+
+  if (data.type === 'alarm') {
+
+    self.registration.showNotification(data.title, {
+
+      body: data.body, icon: '/icon-192.png',
+
+      tag: 'wakeit-alarm', requireInteraction: true,
+
+      data: { url: '/#/alarm-ringing' }
+
+    });
+
+  }
+
+  if (data.type === 'nudge') {
+
+    self.registration.showNotification('Wake up! ðŸ””', {
+
+      body: data.body, icon: '/icon-192.png',
+
+      tag: 'wakeit-nudge',
+
+      data: { url: '/#/alarm-ringing' }
+
+    });
+
+  }
+
+});
+
+self.addEventListener('notificationclick', e => {
+
+  e.notification.close();
+
+  clients.openWindow(e.notification.data.url);
+
+});
+
+SECTION 6 â€” STAGE 3: SUPABASE AUTH + PHONE
+
+âš ï¸  Wire real auth. Complete Stage 2 first.
+
+6.1  Supabase Init
+
+const { createClient } = supabase;
+
+const sb = createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+6.2  Sign Up (with phone)
+
+async function signUp(name, phone, email, password) {
+
+  const { data, error } = await sb.auth.signUp({ email, password });
+
+  if (error) return showToast(error.message, 'error');
+
+  await sb.from('profiles').insert({
+
+    id: data.user.id,
+
+    name,
+
+    phone,          // stored as +91XXXXXXXXXX
+
+    email
+
+  });
+
+  navigate('#/paywall');
+
+}
+
+6.3  Log In / Google OAuth / Forgot Password
+
+async function logIn(email, password) {
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  if (error) return showToast(error.message, 'error');
+
+  const plan = localStorage.getItem('wakeit_plan');
+
+  const phone = localStorage.getItem('wakeit_phone_verified');
+
+  if (!plan) navigate('#/paywall');
+
+  else if (!phone) navigate('#/phone-setup');
+
+  else navigate('#/home');
+
+}
+
+async function googleLogin() {
+
+  await sb.auth.signInWithOAuth({
+
+    provider: 'google',
+
+    options: { redirectTo: window.location.origin + '/#/paywall' }
+
+  });
+
+}
+
+async function forgotPassword(email) {
+
+  await sb.auth.resetPasswordForEmail(email, {
+
+    redirectTo: window.location.origin + '/#/reset-password'
+
+  });
+
+  showToast('Check your email for a reset link', 'success');
+
+}
+
+SECTION 7 â€” STAGE 4: PAYMENT (Razorpay)
+
+âš ï¸  Wire real payments. Complete Stage 3 first.
+
+7.1 & 7.2  Trial (â‚¹25) and Pro (â‚¹499) Payment
+
+<script src='https://checkout.razorpay.com/v1/checkout.js'></script>
+
+async function startTrial() {
+
+  const options = {
+
+    key: 'YOUR_RAZORPAY_KEY', amount: 2500, currency: 'INR',
+
+    name: 'Wakeit', description: '7-Day Trial',
+
+    handler: async (response) => {
+
+      await verifyPayment(response, 'trial');
+
+      localStorage.setItem('wakeit_plan', 'trial');
+
+      localStorage.setItem('wakeit_trial_start', Date.now());
+
+      navigate('#/phone-setup');
+
+    },
+
+    prefill: { email: (await sb.auth.getUser()).data.user.email },
+
+    theme: { color: '#C84BFF' }
+
+  };
+
+  new Razorpay(options).open();
+
+}
+
+async function startPro() {
+
+  const options = {
+
+    key: 'YOUR_RAZORPAY_KEY', amount: 49900, currency: 'INR',
+
+    name: 'Wakeit', description: 'Pro Annual Plan',
+
+    handler: async (response) => {
+
+      await verifyPayment(response, 'pro');
+
+      localStorage.setItem('wakeit_plan', 'pro');
+
+      localStorage.setItem('wakeit_pro_start', Date.now());
+
+      navigate('#/phone-setup');
+
+    },
+
+    prefill: { email: (await sb.auth.getUser()).data.user.email },
+
+    theme: { color: '#C84BFF' }
+
+  };
+
+  new Razorpay(options).open();
+
+}
+
+7.3  Trial Expiry Check
+
+function checkTrialExpiry() {
+
+  if (localStorage.getItem('wakeit_plan') !== 'trial') return;
+
+  const start = parseInt(localStorage.getItem('wakeit_trial_start'));
+
+  if (Date.now() - start > 7 * 24 * 60 * 60 * 1000) {
+
+    localStorage.removeItem('wakeit_plan');
+
+    showToast('Your trial has ended. Please upgrade to Pro.', 'info');
+
+    navigate('#/paywall');
+
+  }
+
+}
+
+// Call on every app open
+
+SECTION 8 â€” STAGE 5: DATABASE SCHEMA
+
+âš ï¸  Tables are pre-created in Supabase. Do NOT recreate them. Use exactly as defined.
+
+8.1  profiles table
+
+id            uuid primary key references auth.users
+
+name          text not null
+
+email         text
+
+phone         text         -- +91XXXXXXXXXX format, used for SMS lookup
+
+onesignal_id  text         -- for push notifications
+
+created_at    timestamptz default now()
+
+8.2  groups table
+
+id            uuid primary key default gen_random_uuid()
+
+name          text not null
+
+emoji         text
+
+invite_code   text unique not null
+
+owner_id      uuid references auth.users
+
+twilio_number text         -- Twilio number assigned to this group
+
+created_at    timestamptz default now()
+
+8.3  group_members table
+
+id         uuid primary key default gen_random_uuid()
+
+group_id   uuid references groups
+
+user_id    uuid references auth.users
+
+joined_at  timestamptz default now()
+
+unique(group_id, user_id)
+
+8.4  alarms table
+
+id              uuid primary key default gen_random_uuid()
+
+group_id        uuid references groups
+
+created_by      uuid references auth.users
+
+alarm_time      timestamptz not null
+
+tone_type       text check (tone_type in ('default','upload','recording'))
+
+tone_url        text
+
+tone_name       text
+
+repeat_type     text default 'once'
+
+is_active       boolean default true
+
+created_at      timestamptz default now()
+
+8.5  alarm_wake_status table  [NEW â€” core of SMS dismiss feature]
+
+id          uuid primary key default gen_random_uuid()
+
+alarm_id    uuid references alarms
+
+user_id     uuid references auth.users
+
+status      text check (status in ('pending','awake')) default 'pending'
+
+woke_at     timestamptz          -- set when status = 'awake'
+
+updated_by  text default 'sms'  -- 'sms' | 'admin_override'
+
+created_at  timestamptz default now()
+
+unique(alarm_id, user_id)
+
+-- Row created for each group member when an alarm is set.
+
+-- Status flips to 'awake' when Twilio webhook receives their SMS
+
+-- OR when admin uses manual override.
+
+SECTION 9 â€” STAGE 6: GROUPS BACKEND
+
+âš ï¸  Wire real group creation and joining. Complete Stage 5 first.
+
+9.1  Create Group
+
+async function createGroup(name, emoji) {
+
+  const user = (await sb.auth.getUser()).data.user;
+
+  const plan = localStorage.getItem('wakeit_plan');
+
+  // Check group limit (trial = 1 group)
+
+  const { count } = await sb.from('group_members')
+
+    .select('*', { count: 'exact' }).eq('user_id', user.id);
+
+  if (plan === 'trial' && count >= 1)
+
+    return showToast('Trial allows 1 group. Upgrade to Pro.', 'error');
+
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+
+  const { data, error } = await sb.from('groups')
+
+    .insert({ name, invite_code: code, owner_id: user.id, emoji,
+
+              twilio_number: 'YOUR_TWILIO_NUMBER' })
+
+    .select().single();
+
+  if (error) return showToast(error.message, 'error');
+
+  await sb.from('group_members')
+
+    .insert({ group_id: data.id, user_id: user.id });
+
+  AppState.currentGroup = data;
+
+  showGroupSuccessState(code, data.twilio_number);
+
+}
+
+9.2  Join Group
+
+async function joinGroup(code) {
+
+  const user = (await sb.auth.getUser()).data.user;
+
+  const { data: group } = await sb.from('groups')
+
+    .select('*').eq('invite_code', code.toUpperCase()).single();
+
+  if (!group) return showToast('Code not found.', 'error');
+
+  const { count } = await sb.from('group_members')
+
+    .select('*', { count: 'exact' }).eq('group_id', group.id);
+
+  const limit = localStorage.getItem('wakeit_plan') === 'pro' ? 20 : 5;
+
+  if (count >= limit) return showToast('This group is full.', 'error');
+
+  await sb.from('group_members').insert({ group_id: group.id, user_id: user.id });
+
+  AppState.currentGroup = group;
+
+  navigate('#/group-detail');
+
+}
+
+SECTION 10 â€” STAGE 7: ALARM SYNC + SMS DISMISS
+
+âš ï¸  Wire alarm creation, Realtime sync, and the SMS dismiss pipeline. Complete Stage 6 first.
+
+10.1  Create Alarm (and seed wake status rows)
+
+async function createAlarm(groupId, time, tone, repeat) {
+
+  const user = (await sb.auth.getUser()).data.user;
+
+  // Insert alarm
+
+  const { data: alarm, error } = await sb.from('alarms').insert({
+
+    group_id: groupId, created_by: user.id, alarm_time: time,
+
+    tone_type: tone.type, tone_url: tone.url || null,
+
+    tone_name: tone.name, repeat_type: repeat
+
+  }).select().single();
+
+  if (error) return showToast(error.message, 'error');
+
+  // Fetch all group members
+
+  const { data: members } = await sb.from('group_members')
+
+    .select('user_id').eq('group_id', groupId);
+
+  // Seed alarm_wake_status row for every member (status = 'pending')
+
+  await sb.from('alarm_wake_status').insert(
+
+    members.map(m => ({ alarm_id: alarm.id, user_id: m.user_id, status: 'pending' }))
+
+  );
+
+  scheduleLocalAlarm(alarm);
+
+  await scheduleOneSignalNotification(alarm);
+
+  navigate('#/home');
+
+  showToast('Alarm set for your group! â°', 'success');
+
+}
+
+10.2  Real-Time Alarm Listener (all group members)
+
+async function subscribeToGroupAlarms(groupId) {
+
+  sb.channel(`alarms:${groupId}`)
+
+    .on('postgres_changes', { event: 'INSERT', schema: 'public',
+
+      table: 'alarms', filter: `group_id=eq.${groupId}` },
+
+      payload => {
+
+        scheduleLocalAlarm(payload.new);
+
+        showToast('New alarm synced from your group ðŸ””', 'info');
+
+      }
+
+    ).subscribe();
+
+}
+
+10.3  Local Alarm Scheduling
+
+function scheduleLocalAlarm(alarm) {
+
+  const delay = new Date(alarm.alarm_time).getTime() - Date.now();
+
+  if (delay < 0) return;
+
+  const stored = JSON.parse(localStorage.getItem('wakeit_alarms') || '[]');
+
+  stored.push(alarm);
+
+  localStorage.setItem('wakeit_alarms', JSON.stringify(stored));
+
+  setTimeout(() => triggerAlarm(alarm), delay);
+
+}
+
+function triggerAlarm(alarm) {
+
+  AppState.ringingAlarm = alarm;
+
+  navigate('#/alarm-ringing');
+
+  const audio = new Audio(alarm.tone_url || '/tones/default.mp3');
+
+  audio.loop = true;
+
+  audio.play();
+
+  AppState.alarmAudio = audio;
+
+}
+
+function stopAlarmAudio() {
+
+  if (AppState.alarmAudio) {
+
+    AppState.alarmAudio.pause();
+
+    AppState.alarmAudio.currentTime = 0;
+
+    AppState.alarmAudio = null;
+
+  }
+
+}
+
+10.4  Twilio Webhook â€” Supabase Edge Function
+
+âš ï¸  This Edge Function must be deployed to Supabase before SMS dismiss works. Frontend does NOT call this â€” Twilio calls it.
+
+// Edge function: supabase/functions/twilio-sms-webhook/index.ts
+
+// Deploy: supabase functions deploy twilio-sms-webhook
+
+// Set in Twilio console as the webhook URL for inbound SMS
+
+import { serve } from 'https://deno.land/std/http/server.ts';
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+
+serve(async (req) => {
+
+  const form = await req.formData();
+
+  const fromPhone = form.get('From');   // e.g. '+919876543210'
+
+  const body = (form.get('Body') || '').trim().toUpperCase();
+
+  if (body !== 'WAKE') {
+
+    return new Response('<Response/>', { headers: { 'Content-Type': 'text/xml' } });
+
+  }
+
+  const sb = createClient(
+
+    Deno.env.get('SUPABASE_URL')!,
+
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+  );
+
+  // Find the user by phone number
+
+  const { data: profile } = await sb.from('profiles')
+
+    .select('id').eq('phone', fromPhone).single();
+
+  if (!profile) return new Response('<Response/>', { headers: { 'Content-Type': 'text/xml' } });
+
+  // Find the active pending wake status for this user
+
+  const { data: status } = await sb.from('alarm_wake_status')
+
+    .select('id, alarm_id')
+
+    .eq('user_id', profile.id)
+
+    .eq('status', 'pending')
+
+    .order('created_at', { ascending: false })
+
+    .limit(1).single();
+
+  if (!status) return new Response('<Response/>', { headers: { 'Content-Type': 'text/xml' } });
+
+  // Flip status to 'awake' â€” Realtime fires immediately
+
+  await sb.from('alarm_wake_status').update({
+
+    status: 'awake',
+
+    woke_at: new Date().toISOString(),
+
+    updated_by: 'sms'
+
+  }).eq('id', status.id);
+
+  return new Response('<Response/>', { headers: { 'Content-Type': 'text/xml' } });
+
+});
+
+10.5  Wake Dashboard Backend â€” Real-Time Listener
+
+// Subscribe to wake status changes for all members of an alarm
+
+function subscribeToWakeDashboard(alarmId) {
+
+  sb.channel(`wake:${alarmId}`)
+
+    .on('postgres_changes', {
+
+      event: 'UPDATE', schema: 'public',
+
+      table: 'alarm_wake_status',
+
+      filter: `alarm_id=eq.${alarmId}`
+
+    }, payload => {
+
+      AppState.wakeStatuses[payload.new.user_id] = payload.new.status;
+
+      renderWakeDashboard();  // re-render the list
+
+    }).subscribe();
+
+}
+
+10.6  Admin: Nudge Sleeping Member
+
+async function nudgeMember(userId) {
+
+  const { data: profile } = await sb.from('profiles')
+
+    .select('onesignal_id').eq('id', userId).single();
+
+  if (!profile?.onesignal_id) return showToast('Cannot reach this member.', 'error');
+
+  await sb.functions.invoke('nudge-member', {
+
+    body: { onesignal_id: profile.onesignal_id, group_name: AppState.currentGroup.name }
+
+  });
+
+  showToast('Nudge sent! ðŸ””', 'success');
+
+  // Disable nudge button for this member for 2 minutes
+
+  disableNudgeButton(userId, 120000);
+
+}
+
+// IMPORTANT: There is NO markMemberAwake() function.
+
+// There is NO dismissAllSleeping() function.
+
+// Admin cannot stop anyone's alarm. Only the member's own SMS does that.
+
+// This is intentional â€” it is the core design of Wakeit.
+
+SECTION 11 â€” STAGE 8: TONE SYSTEM
+
+âš ï¸  Wire tone upload and voice recording. Complete Stage 7 first.
+
+11.1  Upload Audio (Pro only)
+
+async function uploadTone(file) {
+
+  if (file.size > 10 * 1024 * 1024) return showToast('Max 10MB.', 'error');
+
+  const user = (await sb.auth.getUser()).data.user;
+
+  const path = `${user.id}/${Date.now()}_${file.name}`;
+
+  const { error } = await sb.storage.from('alarm-tones').upload(path, file);
+
+  if (error) return showToast('Upload failed.', 'error');
+
+  const url = sb.storage.from('alarm-tones').getPublicUrl(path).data.publicUrl;
+
+  AppState.selectedTone = { type: 'upload', url, name: file.name };
+
+  showToast('Tone uploaded! âœ…', 'success');
+
+  await cacheTone(url);
+
+}
+
+11.2  Voice Recording (Pro only, max 30s)
+
+let mediaRecorder, recordingChunks = [];
+
+async function startRecording() {
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  mediaRecorder = new MediaRecorder(stream);
+
+  recordingChunks = [];
+
+  mediaRecorder.ondataavailable = e => recordingChunks.push(e.data);
+
+  mediaRecorder.onstop = async () => {
+
+    const blob = new Blob(recordingChunks, { type: 'audio/webm' });
+
+    await uploadTone(new File([blob], `voice_${Date.now()}.webm`));
+
+  };
+
+  mediaRecorder.start();
+
+  setTimeout(() => stopRecording(), 30000);
+
+}
+
+11.3  Tone Caching (for offline playback)
+
+async function cacheTone(url) {
+
+  const cache = await caches.open('wakeit-tones');
+
+  await cache.add(url);
+
+}
+
+SECTION 12 â€” STAGE 9: PUSH NOTIFICATIONS (OneSignal)
+
+âš ï¸  Complete Stage 8 first.
+
+12.1  OneSignal Init
+
+<script src='https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js' defer></script>
+
+<script>
+
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+  OneSignalDeferred.push(async function(OneSignal) {
+
+    await OneSignal.init({ appId: 'YOUR_ONESIGNAL_APP_ID', serviceWorkerPath: '/sw.js' });
+
+  });
+
+</script>
+
+12.2  Request Permission + Save ID
+
+async function requestNotificationPermission() {
+
+  await OneSignal.Notifications.requestPermission();
+
+  const userId = (await sb.auth.getUser()).data.user.id;
+
+  const onesignalId = await OneSignal.User.getOnesignalId();
+
+  await sb.from('profiles').update({ onesignal_id: onesignalId }).eq('id', userId);
+
+}
+
+12.3  Notification Types
+
+New alarm set for group â†’ all other members notified (background push)
+
+1 minute before alarm time â†’ all members notified
+
+Nudge from admin â†’ targeted push to sleeping member
+
+New member joined â†’ owner notified
+
+12.4  Nudge Edge Function
+
+// supabase/functions/nudge-member/index.ts
+
+// Sends a OneSignal push to a specific device
+
+// Called by admin via sb.functions.invoke('nudge-member', { body: { onesignal_id, group_name } })
+
+serve(async (req) => {
+
+  const { onesignal_id, group_name } = await req.json();
+
+  await fetch('https://onesignal.com/api/v1/notifications', {
+
+    method: 'POST',
+
+    headers: {
+
+      'Content-Type': 'application/json',
+
+      'Authorization': `Basic ${Deno.env.get('ONESIGNAL_REST_KEY')}`
+
+    },
+
+    body: JSON.stringify({
+
+      app_id: Deno.env.get('ONESIGNAL_APP_ID'),
+
+      include_player_ids: [onesignal_id],
+
+      headings: { en: 'â° Wake up!' },
+
+      contents: { en: `${group_name} admin is waiting. Send WAKE to dismiss!` },
+
+      data: { type: 'nudge', group_name }
+
+    })
+
+  });
+
+  return new Response('ok');
+
+});
+
+SECTION 13 â€” STAGE 10: FINAL QA + VERCEL DEPLOY
+
+âš ï¸  Final checks before going live. Complete all stages first.
+
+13.1  vercel.json
+
+{
+
+  'rewrites': [{ 'source': '/(.*)', 'destination': '/index.html' }]
+
+}
+
+// Safety net only. Hash routing works without it.
+
+13.2  Environment Variables
+
+// Set in Vercel dashboard â†’ Project Settings â†’ Environment Variables
+
+SUPABASE_URL
+
+SUPABASE_ANON_KEY
+
+SUPABASE_SERVICE_ROLE_KEY   // Edge functions only â€” never expose to frontend
+
+RAZORPAY_KEY_ID
+
+ONESIGNAL_APP_ID
+
+ONESIGNAL_REST_KEY          // Edge functions only
+
+TWILIO_ACCOUNT_SID          // Edge functions only
+
+TWILIO_AUTH_TOKEN           // Edge functions only
+
+TWILIO_PHONE_NUMBER         // The virtual number members SMS to
+
+13.3  Full Bug Checklist
+
+ROUTING
+
+All 15 screens accessible via hash URL
+
+Browser back button works correctly
+
+Refresh on any screen stays on that screen (not 404)
+
+Auth guard redirects unauthenticated â†’ #/login
+
+Plan guard redirects unpaid â†’ #/paywall
+
+Admin guard blocks non-admins from #/wake-dashboard
+
+DESIGN
+
+Day theme 6AMâ€“6PM, Night theme 6PMâ€“6AM on all 15 screens
+
+TimeDial drag works on mouse and touch
+
+MemberStatusRow renders correct colors (green awake, orange sleeping)
+
+SMSInstructionCard visible and prominent on alarm-ringing screen
+
+AUTH + PHONE
+
+Sign up creates user + profile with phone number
+
+Log in works; Google OAuth redirects correctly
+
+Session persists after page refresh
+
+Phone setup screen enforces +91 format
+
+PAYMENT
+
+Trial â‚¹25 Razorpay flow completes â†’ redirects to phone-setup
+
+Pro â‚¹499 flow completes â†’ redirects to phone-setup
+
+Trial expiry check works after 7 days
+
+GROUPS
+
+Create group generates unique 6-digit code
+
+Twilio number displayed in group success state and group detail
+
+Join group with valid/invalid code works correctly
+
+Member limits enforced (5 trial / 20 pro)
+
+SMS DISMISS â€” CRITICAL
+
+alarm_wake_status rows seeded for all members when alarm is created
+
+Alarm-ringing screen shows Twilio number and 'Open SMS App' button
+
+'Open SMS App' button opens sms: link pre-filled with WAKE message
+
+Twilio webhook Edge Function deployed and URL set in Twilio console
+
+Sending WAKE SMS flips status to 'awake' in Supabase
+
+Realtime update received on sender's device â†’ alarm stops â†’ navigate home
+
+Admin wake dashboard updates in real time as members SMS
+
+WAKE DASHBOARD â€” ADMIN
+
+Only admin can access #/wake-dashboard
+
+Filter tabs (All / Awake / Sleeping) correctly filter the member list
+
+Member list updates in real time as members send SMS
+
+Awake members show green badge + time they SMS'd
+
+Sleeping members show orange badge + duration since alarm fired
+
+Nudge button sends push notification to sleeping member's device
+
+Nudge button disables for 2 minutes after being pressed (anti-spam)
+
+There is NO Mark Awake button and NO Dismiss All button â€” by design
+
+TONES
+
+Default tones play as preview
+
+Upload (Pro) and voice recording (Pro) work
+
+Tone cached for offline playback
+
+PWA + PERFORMANCE
+
+App installable on Android Chrome and iOS Safari
+
+App works offline after install
+
+Alarm rings via push when app is closed
+
+App loads under 3 seconds
+
+No console errors in production
+
+13.4  Capacitor (After Web Works Perfectly)
+
+npm install @capacitor/core @capacitor/cli
+
+npx cap init Wakeit com.wakeit.app
+
+npx cap add android
+
+npx cap add ios
+
+npx cap copy
+
+npx cap open android   # opens Android Studio
+
+npx cap open ios       # opens Xcode
+
+âš ï¸  The web app is the source of truth. Capacitor just wraps it. All features work identically on web, Android, and iOS. Test web completely before wrapping.
+
+13.5  Empty States
+
+No alarms: 'No alarms yet. Tap + to create one.'
+
+No groups: 'No groups yet. Create or join one.'
+
+No members awake yet: 'Waiting for members to SMS in...'
+
+All awake: 'ðŸŽ‰ Everyone is awake!'
+
+13.6  Toast Notifications
+
+function showToast(message, type = 'info') {
+
+  // type: 'success' | 'error' | 'info' | 'warning'
+
+  const colors = {
+
+    success: '#4CD964', error: '#FF3B30',
+
+    info: '#C84BFF', warning: '#FF9500'
+
+  };
+
+  const toast = document.createElement('div');
+
+  toast.style.cssText = `
+
+    position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
+
+    background:${colors[type]}; color:#fff; padding:12px 20px;
+
+    border-radius:999px; font-size:14px; font-weight:600;
+
+    box-shadow:0 4px 20px rgba(0,0,0,0.2); z-index:9999;
+
+    animation: fadeInUp 0.3s ease;`,
+
+  toast.textContent = message;
+
+  document.getElementById('toast-container').appendChild(toast);
+
+  setTimeout(() => toast.remove(), 3000);
+
+}
+
+SECTION 14 â€” ANTIGRAVITY MASTER PROMPT â€” PASTE THIS INTO ANTIGRAVITY
+
+âš ï¸  Copy the entire block below and paste at the top of your Antigravity project.
+
+ANTIGRAVITY BUILD INSTRUCTIONS â€” WAKEIT v3.1
+
+You are building 'Wakeit' â€” a group alarm sync web app.
+
+Stack: ONLY HTML, CSS, vanilla JavaScript. No React. No Vue. No frameworks.
+
+A complete PRD is below. Follow every rule exactly.
+
+CRITICAL RULES:
+
+1. READ THE FULL PRD before writing any code.
+
+2. SINGLE FILE: Entire app inside one index.html.
+
+   All 15 screens are hidden divs. Show/hide with JavaScript.
+
+   Never create separate HTML files per screen.
+
+3. HASH ROUTING ONLY: Every navigation uses hash URLs (#/home, #/login etc).
+
+   Mandatory for Vercel. Never use page-based routing.
+
+   Implement router exactly as in Section 2.
+
+4. NUMBERED SYSTEM: Every requirement has a section number.
+
+   When given 'fix 10.4' or 'update 4.13' â€” go ONLY to that section.
+
+   Fix only that item. This saves build credits.
+
+5. BUILD STAGE BY STAGE (do not skip ahead):
+
+   Stage 1  â†’ Section 4  (All 15 screens, design system, dummy data)
+
+   Stage 2  â†’ Section 5  (PWA: manifest + service worker)
+
+   Stage 3  â†’ Section 6  (Supabase Auth + phone number)
+
+   Stage 4  â†’ Section 7  (Razorpay payments)
+
+   Stage 5  â†’ Section 8  (Database schema â€” reference only, do not recreate)
+
+   Stage 6  â†’ Section 9  (Groups backend)
+
+   Stage 7  â†’ Section 10 (Alarm sync + SMS dismiss pipeline)
+
+   Stage 8  â†’ Section 11 (Tone system)
+
+   Stage 9  â†’ Section 12 (OneSignal push notifications)
+
+   Stage 10 â†’ Section 13 (Final QA + Vercel deploy)
+
+6. AFTER EACH STAGE: test all features, fix all bugs. Then move on.
+
+7. DESIGN SYSTEM (Section 1): applies to all 15 screens.
+
+   Auto theme: day (6AM-6PM) green neumorphism,
+
+               night (6PM-6AM) purple glassmorphism.
+
+   CSS variables exactly as in Sections 1.3 and 1.4.
+
+8. REUSABLE COMPONENTS (Section 1.7): build JS functions first. Reuse everywhere.
+
+   Key new components: MemberStatusRow, SMSInstructionCard, WakeDashboardCard.
+
+9. SMS DISMISS is the CORE differentiating feature. Section 10 is the most
+
+   important section. The alarm-ringing screen (4.13) CANNOT have a dismiss button.
+
+   The only way to stop the alarm is by receiving an SMS confirmation.
+
+10. WAKE DASHBOARD (#/wake-dashboard) is admin-only.
+
+    Admin powers are LIMITED TO: view awake/sleeping filter + nudge sleeping members.
+
+    Admin CANNOT stop anyone's alarm. No Mark Awake. No Dismiss All. By design.
+
+    The only way any alarm stops is when that member personally sends the WAKE SMS.
+
+11. TWILIO WEBHOOK: Deploy the Edge Function (Section 10.4) to Supabase.
+
+    Set the Edge Function URL as the inbound SMS webhook in your Twilio console.
+
+    This is what makes SMS dismiss work.
+
+12. DO NOT build anything outside this PRD.
+
+    If any requirement is unclear, ask before building.
+
+13. VERCEL: Hash routing (#/screen) solves all 404 issues. Never deviate.
+
+14. CAPACITOR (Section 13.4): wrap ONLY after web is 100% working.
+
+    The web build is published as-is for Android and iOS.
+
+    No native code changes needed â€” Capacitor handles the wrapping.
+
+Begin now with Stage 1 â€” build all 15 screens from Section 4 with the
+
+full design system applied. Use dummy/static data only. No backend calls.
+
+Both day and night themes must look perfect before moving to Stage 2.
+
+Wakeit PRD v3.1 â€” End of Document
+
+
+

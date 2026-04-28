@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "importMap": "./import_map.json",
+  "tasks": {
+    "deploy": "supabase functions deploy"
+  }
+}
