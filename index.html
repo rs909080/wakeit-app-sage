@@ -3680,6 +3680,13 @@
       let _authReadyResolve;
       const _authReady = new Promise(resolve => { _authReadyResolve = resolve; });
 
+      /* _profileReady — resolves once the user profile + plan data are loaded
+         into localStorage. appInit() must wait for this before routing to
+         plan-gated screens, otherwise isPlanActive() sees stale/empty data
+         and the plan gate silently redirects away. */
+      let _profileReadyResolve;
+      const _profileReady = new Promise(resolve => { _profileReadyResolve = resolve; });
+
       /* Auth state listener — single source of truth */
       db.auth.onAuthStateChange(async (event, session) => {
         // DEV PREVIEW MODE: ignore real auth events — keep the mock user
@@ -3759,22 +3766,16 @@
           setTimeout(() => checkTrialExpiry(), 500);
           // Check for missed alarms (delayed so it doesn't block UI)
           setTimeout(() => checkMissedAlarms(), 2000);
-          // Re-init data-driven screens that may have rendered before auth resolved.
-          // This covers the page-refresh race: onAuthStateChange fires after
-          // initGroups/initHome already ran with a null user, so we re-run them here.
-          const h = window.location.hash;
-          if (h === '#/groups') {
-            initGroups();
-          } else if (h === '#/home') {
-            loadHomeAlarms();
-          } else if (h === '#/settings') {
-            initScreen('#/settings');
-          }
+
+          // Profile + plan data is now loaded — resolve the gate so appInit() can route
+          console.log('[Wakeit] Profile ready — plan_type:', localStorage.getItem('wakeit_plan_type'));
+          if (_profileReadyResolve) { _profileReadyResolve(); _profileReadyResolve = null; }
         } else {
           AppState.profile = null;
+          // No user — resolve _profileReady so appInit() doesn't hang
+          if (_profileReadyResolve) { _profileReadyResolve(); _profileReadyResolve = null; }
           // Only redirect on explicit SIGNED_OUT. On initial load with no session,
           // appInit() handles routing after _authReady resolves.
-          const ch = window.location.hash;
           if (event === 'SIGNED_OUT') {
             window.location.hash = '#/login';
             setTimeout(() => onRouteChange(), 50);
@@ -3829,10 +3830,18 @@
           const PLAN_GATED = ['#/groups', '#/group-detail', '#/create-group', '#/join-group', '#/wake-dashboard'];
           if (PLAN_GATED.includes(hash) && AppState.user && !isPlanActive()) {
             console.warn('[Wakeit] PLAN GATE blocked route:', hash, '— isPlanActive()=false, planType=', getPlanType());
-            showToast('Choose a plan to access Wakeit 🚀', 'info');
-            setTimeout(() => openModal('modal-plans'), 400);
-            navigate('#/home');
-            return;
+            // Double-check: if planType is null, the profile might not have loaded yet.
+            // In that case, let the route through — initGroups has its own auth guard.
+            const pt = getPlanType();
+            if (pt !== null) {
+              // Plan type IS set but expired/invalid — genuinely block
+              showToast('Choose a plan to access Wakeit 🚀', 'info');
+              setTimeout(() => openModal('modal-plans'), 400);
+              navigate('#/home');
+              return;
+            } else {
+              console.log('[Wakeit] Plan type is null (profile not loaded yet?) — allowing route through');
+            }
           }
 
           // If on landing while logged in, redirect to home
@@ -3901,7 +3910,7 @@
           }
 
           console.log('[Wakeit] onRouteChange calling initScreen for:', hash);
-          initScreen(hash);
+          await initScreen(hash);
           applyTheme();
 
           // Hide the boot loader — content is now visible
@@ -4044,22 +4053,22 @@
       /* ================================================
          SCREEN INIT FUNCTIONS
       ================================================ */
-      function initScreen(hash) {
+      async function initScreen(hash) {
         switch (hash) {
           case '#/splash': initSplash(); break;
           case '#/onboarding': initOnboarding(); break;
           case '#/login': initLogin(); break;
           case '#/paywall': initPaywall(); break;
-          case '#/home': initHome(); break;
-          case '#/create-alarm': initCreateAlarm(); break;
+          case '#/home': await initHome(); break;
+          case '#/create-alarm': await initCreateAlarm(); break;
           case '#/tone-picker': initTonePicker(); break;
-          case '#/groups': initGroups(); break;
-          case '#/create-group': initCreateGroup(); break;
-          case '#/group-detail': initGroupDetail(); break;
-          case '#/join-group': initJoinGroup(); break;
+          case '#/groups': await initGroups(); break;
+          case '#/create-group': await initCreateGroup(); break;
+          case '#/group-detail': await initGroupDetail(); break;
+          case '#/join-group': await initJoinGroup(); break;
           case '#/settings': initSettings(); break;
           case '#/alarm-ringing': initAlarmRinging(); break;
-          case '#/wake-dashboard': initWakeDashboard(); break;
+          case '#/wake-dashboard': await initWakeDashboard(); break;
           case '#/landing': initLanding(); break;
         }
       }
@@ -7832,7 +7841,22 @@
         } catch (e) { /* ignore */ }
 
         console.log('[Wakeit] appInit() _authReady done, user:', AppState.user ? AppState.user.id : 'null');
-        // Now safe to route — AppState.user is already set (or null)
+
+        // If user exists, wait for profile + plan data to load before routing.
+        // Without this, isPlanActive() sees empty localStorage and the plan gate
+        // silently redirects plan-gated routes (like #/groups) to #/home.
+        if (AppState.user) {
+          console.log('[Wakeit] appInit() waiting for _profileReady...');
+          try {
+            await Promise.race([
+              _profileReady,
+              new Promise(resolve => setTimeout(resolve, 4000))
+            ]);
+          } catch (e) { /* ignore */ }
+          console.log('[Wakeit] appInit() _profileReady done, plan_type:', localStorage.getItem('wakeit_plan_type'));
+        }
+
+        // Now safe to route — AppState.user AND plan data are set (or null)
         // ALWAYS call onRouteChange() directly — never rely on hashchange firing.
         try {
           if (!window.location.hash || window.location.hash === '#') {
@@ -7840,17 +7864,9 @@
             history.replaceState(null, '', '#/splash');
           }
           console.log('[Wakeit] appInit() routing to hash:', window.location.hash);
-          const hashBeforeRoute = window.location.hash;
           // Always route directly — guaranteed to run regardless of hashchange.
           await onRouteChange();
-          const hashAfterRoute = window.location.hash;
-          console.log('[Wakeit] appInit() after onRouteChange — hash before:', hashBeforeRoute, 'hash after:', hashAfterRoute);
-          if (hashAfterRoute === '#/groups') {
-            console.log('[Wakeit] calling initGroups() from appInit');
-            await initGroups();
-          } else if (hashBeforeRoute === '#/groups' && hashAfterRoute !== '#/groups') {
-            console.warn('[Wakeit] appInit: hash CHANGED from #/groups to', hashAfterRoute, '— initGroups() skipped (likely plan gate redirect)');
-          }
+          console.log('[Wakeit] appInit() routing complete, current hash:', window.location.hash);
         } catch (e) {
           console.error('[Wakeit] appInit routing error:', e);
           // Hide loader on error so user isn't stuck forever
