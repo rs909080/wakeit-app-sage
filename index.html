@@ -54,9 +54,9 @@
 
     const firebaseConfig = {
       apiKey: "AIzaSyBg_p3NDt_sg8Iuf3Cv3eQ5zpCWlA1sGWM",
-      authDomain: "wakeit-4c8ae.firebaseapp.com",
-      projectId: "wakeit-4c8ae",
-      storageBucket: "wakeit-4c8ae.firebasestorage.app",
+      authDomain: "wakeit-44bf3.firebaseapp.com",
+      projectId: "wakeit-44bf3",
+      storageBucket: "wakeit-44bf3.firebasestorage.app",
       messagingSenderId: "346045783486",
       appId: "1:346045783486:web:d94c87cc4a5aa81b97edef"
     };
@@ -7867,6 +7867,10 @@
           // Always route directly — guaranteed to run regardless of hashchange.
           await onRouteChange();
           console.log('[Wakeit] appInit() routing complete, current hash:', window.location.hash);
+          if (window.location.hash === '#/groups') {
+            console.log('[Wakeit] calling initGroups() from appInit');
+            await initGroups();
+          }
         } catch (e) {
           console.error('[Wakeit] appInit routing error:', e);
           // Hide loader on error so user isn't stuck forever
