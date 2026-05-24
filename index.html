@@ -5006,8 +5006,10 @@
 
       /* ------ S-08 Groups (Stage 4 — real groups) ------ */
       async function initGroups() {
-        AppHeader('groups-header', 'My Groups', false, null, false);
-        BottomNav('groups-nav', 'groups');
+        console.log('[Wakeit] initGroups() started');
+        try {
+          AppHeader('groups-header', 'My Groups', false, null, false);
+          BottomNav('groups-nav', 'groups');
 
         // Auth guard: ensure session is confirmed before fetching.
         // On page refresh, AppState.user may not be set yet if onAuthStateChange
@@ -5073,6 +5075,9 @@
           </div>
           <span class="group-chevron">›</span>
         </div>`).join('');
+        } catch(err) {
+          console.error('[Wakeit] initGroups() CRASHED:', err);
+        }
       }
 
       async function openGroupDetail(groupId) {
@@ -7835,6 +7840,10 @@
           console.log('[Wakeit] appInit() routing to hash:', window.location.hash);
           // Always route directly — guaranteed to run regardless of hashchange.
           await onRouteChange();
+          if (window.location.hash === '#/groups') {
+            console.log('[Wakeit] calling initGroups() from appInit');
+            await initGroups();
+          }
         } catch (e) {
           console.error('[Wakeit] appInit routing error:', e);
           // Hide loader on error so user isn't stuck forever
