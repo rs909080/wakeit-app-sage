@@ -22,3 +22,9 @@ Thumbs.db
 .vscode/settings.json
 *.swp
 *.swo
+
+# Supabase Migration
+_supabase-migration/
+
+
+.env*.local
