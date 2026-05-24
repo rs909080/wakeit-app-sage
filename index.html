@@ -3828,6 +3828,7 @@
           // Feature 5: Plan gate for group and alarm routes
           const PLAN_GATED = ['#/groups', '#/group-detail', '#/create-group', '#/join-group', '#/wake-dashboard'];
           if (PLAN_GATED.includes(hash) && AppState.user && !isPlanActive()) {
+            console.warn('[Wakeit] PLAN GATE blocked route:', hash, '— isPlanActive()=false, planType=', getPlanType());
             showToast('Choose a plan to access Wakeit 🚀', 'info');
             setTimeout(() => openModal('modal-plans'), 400);
             navigate('#/home');
@@ -3899,6 +3900,7 @@
             }
           }
 
+          console.log('[Wakeit] onRouteChange calling initScreen for:', hash);
           initScreen(hash);
           applyTheme();
 
@@ -7838,11 +7840,16 @@
             history.replaceState(null, '', '#/splash');
           }
           console.log('[Wakeit] appInit() routing to hash:', window.location.hash);
+          const hashBeforeRoute = window.location.hash;
           // Always route directly — guaranteed to run regardless of hashchange.
           await onRouteChange();
-          if (window.location.hash === '#/groups') {
+          const hashAfterRoute = window.location.hash;
+          console.log('[Wakeit] appInit() after onRouteChange — hash before:', hashBeforeRoute, 'hash after:', hashAfterRoute);
+          if (hashAfterRoute === '#/groups') {
             console.log('[Wakeit] calling initGroups() from appInit');
             await initGroups();
+          } else if (hashBeforeRoute === '#/groups' && hashAfterRoute !== '#/groups') {
+            console.warn('[Wakeit] appInit: hash CHANGED from #/groups to', hashAfterRoute, '— initGroups() skipped (likely plan gate redirect)');
           }
         } catch (e) {
           console.error('[Wakeit] appInit routing error:', e);
