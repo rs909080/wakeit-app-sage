@@ -4,11 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wakeit � Wake Up Together</title>
+  <title>Wakeit ⏰ Wake Up Together</title>
+  <meta name="theme-color" content="#C84BFF">
   <meta name="description" content="Group alarm sync app. Set one alarm, your whole group wakes up together." />
   <meta property="og:title" content="Wakeit" />
   <meta property="og:description" content="Wake up together. Group alarm sync with wake confirmation." />
-  <meta property="og:url" content="https://wakeit-app.vercel.app" />
+  <meta property="og:url" content="https://wakeit-app-sage.vercel.app" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -45,8 +46,8 @@
   </script>
   <!-- Supabase Auth (Stage 3) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <!-- Razorpay Payment (Stage 5) - async to prevent render blocking -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
+  <!-- Razorpay Payment (Stage 5) - defer to load sequentially -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
   <!-- Firebase Cloud Messaging (Stage 8) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -2634,6 +2635,12 @@
 </head>
 
 <body class="theme-night">
+  <noscript>
+    <div style="text-align:center;padding:40px;font-family:sans-serif">
+      <h2>Wakeit requires JavaScript</h2>
+      <p>Please enable JavaScript in your browser to use this app.</p>
+    </div>
+  </noscript>
 
   <!-- ======================================================= -->
   <!-- APP INIT LOADER (visible instantly, hidden after routing) -->
@@ -7120,6 +7127,11 @@
             navigate('#/home');
           }
         };
+
+        if (!window.Razorpay) {
+          showToast('Payment is loading, please try again in 2 seconds.', 'warning');
+          return;
+        }
 
         try {
           new Razorpay(options).open();
