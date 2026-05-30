@@ -28,3 +28,4 @@ _supabase-migration/
 
 
 .env*.local
+.vercel

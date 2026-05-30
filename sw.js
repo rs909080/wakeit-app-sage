@@ -102,7 +102,7 @@ self.addEventListener('push', (event) => {
   /* ── type: 'alarm' — alarm is about to ring ── */
   if (data.type === 'alarm') {
     event.waitUntil(
-      self.registration.showNotification(data.title || '⏰ Alarm Ringing!', {
+      self.registration.showNotification(data.title || ' Alarm Ringing!', {
         body: data.body || 'Your group alarm is ringing. Tap to open Wakeit.',
         icon: '/icon-192.png',
         badge: '/icon-192.png',
@@ -111,7 +111,7 @@ self.addEventListener('push', (event) => {
         vibrate: [300, 100, 300, 100, 300],
         data: { url: '/#/alarm-ringing', type: 'alarm' },
         actions: [
-          { action: 'open', title: '⏰ Open Wakeit' },
+          { action: 'open', title: ' Open Wakeit' },
           { action: 'dismiss', title: '✖ Dismiss' },
         ],
       })
@@ -121,7 +121,7 @@ self.addEventListener('push', (event) => {
   /* ── type: 'nudge' — admin nudged a sleeping member ── */
   if (data.type === 'nudge') {
     event.waitUntil(
-      self.registration.showNotification('⏰ Wake up!', {
+      self.registration.showNotification(' Wake up!', {
         body: data.body || `${data.group_name || 'Your group'} admin is waiting. Open Wakeit to confirm you're awake!`,
         icon: '/icon-192.png',
         badge: '/icon-192.png',
@@ -136,7 +136,7 @@ self.addEventListener('push', (event) => {
   /* ── type: 'new-alarm' — a new alarm was created for the group ── */
   if (data.type === 'new-alarm') {
     event.waitUntil(
-      self.registration.showNotification('🔔 New Alarm Set', {
+      self.registration.showNotification(' New Alarm Set', {
         body: data.body || 'A new alarm has been scheduled for your group.',
         icon: '/icon-192.png',
         badge: '/icon-192.png',
@@ -149,7 +149,7 @@ self.addEventListener('push', (event) => {
   /* ── type: 'new-member' — someone joined the owner's group ── */
   if (data.type === 'new-member') {
     event.waitUntil(
-      self.registration.showNotification('👥 New Member Joined', {
+      self.registration.showNotification(' New Member Joined', {
         body: data.body || 'Someone just joined your group.',
         icon: '/icon-192.png',
         badge: '/icon-192.png',
@@ -171,7 +171,7 @@ self.addEventListener('push', (event) => {
       }
 
       event.waitUntil(
-        self.registration.showNotification('⏰ Wakeit Alarm!', {
+        self.registration.showNotification(' Wakeit Alarm!', {
           body: 'Your alarm is ringing. Wake up!',
           icon: '/icon-192.png',
           badge: '/icon-192.png',
@@ -180,7 +180,7 @@ self.addEventListener('push', (event) => {
           vibrate: [300, 100, 300, 100, 300],
           data: { url: '/#/alarm-ringing', type: 'alarm' },
           actions: [
-            { action: 'open', title: '⏰ Open Wakeit' },
+            { action: 'open', title: ' Open Wakeit' },
             { action: 'dismiss', title: '✖ Dismiss' },
           ],
           showTrigger: new TimestampTrigger(targetDate.getTime())
@@ -208,7 +208,7 @@ self.addEventListener('message', async (event) => {
         targetDate.setDate(targetDate.getDate() + 1);
       }
 
-      await self.registration.showNotification('⏰ Wakeit Alarm!', {
+      await self.registration.showNotification(' Wakeit Alarm!', {
         body: 'Your alarm is ringing. Wake up!',
         icon: '/icon-192.png',
         badge: '/icon-192.png',
@@ -217,7 +217,7 @@ self.addEventListener('message', async (event) => {
         vibrate: [300, 100, 300, 100, 300],
         data: { url: '/#/alarm-ringing', type: 'alarm' },
         actions: [
-          { action: 'open', title: '⏰ Open Wakeit' },
+          { action: 'open', title: ' Open Wakeit' },
           { action: 'dismiss', title: '✖ Dismiss' },
         ],
         showTrigger: new TimestampTrigger(targetDate.getTime())

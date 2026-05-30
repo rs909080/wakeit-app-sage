@@ -2653,7 +2653,7 @@
     align-items:center; justify-content:center;
     gap:20px; font-family:Inter,system-ui,sans-serif;
   ">
-    <div style="font-size:52px; animation:loaderPulse 1.5s ease-in-out infinite;">⏰</div>
+    <div style="font-size:52px; animation:loaderPulse 1.5s ease-in-out infinite;"></div>
     <div style="font-size:18px; font-weight:700; color:#fff;">Wakeit</div>
     <div style="
       width:48px; height:4px; border-radius:999px;
@@ -2708,17 +2708,17 @@
 
       <div class="landing-features">
         <div class="feature-card">
-          <div class="feature-icon">⏰</div>
+          <div class="feature-icon"></div>
           <div class="feature-title">Group Sync</div>
           <div class="feature-desc">One alarm rings on every member's device</div>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">✅</div>
+          <div class="feature-icon"></div>
           <div class="feature-title">Confirm Awake</div>
           <div class="feature-desc">Pick a reason to dismiss — admin sees who's up</div>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🔔</div>
+          <div class="feature-icon"></div>
           <div class="feature-title">Nudge Sleepers</div>
           <div class="feature-desc">Admin can buzz anyone still sleeping</div>
         </div>
@@ -2740,7 +2740,7 @@
   <!-- ================================================ -->
   <div id="screen-splash" class="screen screen-public screen-fullscreen">
     <div class="splash-glow"></div>
-    <div class="splash-icon">🌙</div>
+    <div class="splash-icon"></div>
     <div class="splash-logo">Wakeit</div>
     <div class="splash-tagline">Wake up together.</div>
     <div class="splash-bar-wrap">
@@ -2755,7 +2755,7 @@
     <span class="onboarding-skip" id="onboarding-skip">Skip</span>
     <div id="onboarding-slider" class="onboarding-slider">
       <div class="onboarding-slide">
-        <div class="slide-icon">📱</div>
+        <div class="slide-icon"></div>
         <div class="slide-title">One alarm for everyone.</div>
         <div class="slide-sub">Set it once. Your whole group wakes up simultaneously, no matter where they are.</div>
       </div>
@@ -2765,7 +2765,7 @@
         <div class="slide-sub">Upload a custom audio file or record a personal voice message as your alarm tone.</div>
       </div>
       <div class="onboarding-slide">
-        <div class="slide-icon">💬</div>
+        <div class="slide-icon"></div>
         <div class="slide-title">Wake up confirmed.</div>
         <div class="slide-sub">Pick an interactive reason to prove you're awake. No sneaky snoozes — the alarm only
           stops when you verify.</div>
@@ -2788,7 +2788,7 @@
   <!-- ================================================ -->
   <div id="screen-login" class="screen screen-public">
     <div class="login-page flex-1">
-      <div class="login-logo"><span>Wakeit</span> 🔔</div>
+      <div class="login-logo"><span>Wakeit</span> </div>
       <div class="pill-tabs" id="auth-tabs" style="margin-bottom: 24px;">
         <button class="pill-tab active" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
         <button class="pill-tab" id="tab-login" onclick="switchAuthTab('login')">Log In</button>
@@ -2894,7 +2894,7 @@
             <div class="card next-alarm-card">
               <div class="section-title">Next Alarm</div>
               <div id="next-alarm-time" class="next-alarm-time"></div>
-              <div id="next-alarm-label" class="next-alarm-label">⏰ Your Group</div>
+              <div id="next-alarm-label" class="next-alarm-label"> Your Group</div>
               <div class="next-alarm-row">
                 <span class="sms-badge" id="next-alarm-badge"></span>
                 <label class="toggle"><input type="checkbox" id="next-alarm-toggle"
@@ -2974,7 +2974,7 @@
             <!-- Live member delivery status card -->
             <div id="member-status-card" class="card" style="display:none; margin-bottom:var(--space-4); padding:var(--space-3);">
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                <span style="font-size:14px; font-weight:600; color:var(--text-primary);">👥 Member Delivery Status</span>
+                <span style="font-size:14px; font-weight:600; color:var(--text-primary);"> Member Delivery Status</span>
                 <span id="member-status-live-dot" style="width:8px;height:8px;border-radius:50%;background:#34C759;display:inline-block;animation:pulse 2s ease-in-out infinite;"></span>
               </div>
               <div id="member-status-list" style="font-size:13px; color:var(--text-secondary); line-height:1.6;"></div>
@@ -2997,28 +2997,28 @@
             <div class="card" style="padding:0; overflow:hidden; margin-bottom: var(--space-4);">
               <!-- Each row: clicking icon/name selects, clicking ▶ previews -->
               <div class="tone-row">
-                <span class="tone-icon">🔔</span>
+                <span class="tone-icon"></span>
                 <span class="tone-name" onclick="selectTone('beep')">Classic Beep</span>
                 <button class="tone-play" id="tone-play-beep" onclick="previewTone('beep')"
                   aria-label="Preview Classic Beep">▶</button>
                 <span class="tone-check" id="tone-check-beep">✓</span>
               </div>
               <div class="tone-row">
-                <span class="tone-icon">🦅</span>
+                <span class="tone-icon"></span>
                 <span class="tone-name" onclick="selectTone('birds')">Morning Birds</span>
                 <button class="tone-play" id="tone-play-birds" onclick="previewTone('birds')"
                   aria-label="Preview Morning Birds">▶</button>
                 <span class="tone-check" id="tone-check-birds" style="opacity:0">✓</span>
               </div>
               <div class="tone-row">
-                <span class="tone-icon">🌊</span>
+                <span class="tone-icon"></span>
                 <span class="tone-name" onclick="selectTone('rise')">Gentle Rise</span>
                 <button class="tone-play" id="tone-play-rise" onclick="previewTone('rise')"
                   aria-label="Preview Gentle Rise">▶</button>
                 <span class="tone-check" id="tone-check-rise" style="opacity:0">✓</span>
               </div>
               <div class="tone-row">
-                <span class="tone-icon">📳</span>
+                <span class="tone-icon"></span>
                 <span class="tone-name" onclick="selectTone('buzz')">Digital Buzz</span>
                 <button class="tone-play" id="tone-play-buzz" onclick="previewTone('buzz')"
                   aria-label="Preview Digital Buzz">▶</button>
@@ -3031,7 +3031,7 @@
               <!-- Action buttons always at the top -->
               <div class="tone-row" id="tone-row-upload" onclick="handleUploadTone()"
                 style="cursor:pointer; border-bottom: 1px solid var(--border);">
-                <span class="tone-icon">📁</span>
+                <span class="tone-icon"></span>
                 <span class="tone-name" style="font-weight:700; color:var(--primary);">Upload Audio File</span>
                 <span class="pro-tag">Pro</span>
                 <input type="file" id="tone-file-input" accept=".mp3,.m4a,.wav,.ogg,.webm" style="display:none;"
@@ -3039,7 +3039,7 @@
               </div>
               <div class="tone-row" id="tone-row-record" onclick="handleRecordTone()"
                 style="cursor:pointer; border-bottom: 1px solid var(--border);">
-                <span class="tone-icon">🎤</span>
+                <span class="tone-icon"></span>
                 <span class="tone-name" id="record-label" style="font-weight:700; color:var(--primary);">Record Voice
                   (30s max)</span>
                 <span class="pro-tag">Pro</span>
@@ -3129,14 +3129,14 @@
 
             <div class="section-title">Group Emoji</div>
             <div class="emoji-selector" id="emoji-selector" style="margin-bottom: var(--space-5);">
-              <div class="emoji-option selected" onclick="selectEmoji(this,'⏰')">⏰</div>
-              <div class="emoji-option" onclick="selectEmoji(this,'🌅')">🌅</div>
-              <div class="emoji-option" onclick="selectEmoji(this,'🕐')">🕐</div>
-              <div class="emoji-option" onclick="selectEmoji(this,'🎉')">🎉</div>
+              <div class="emoji-option selected" onclick="selectEmoji(this,'')"></div>
+              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
+              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
+              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
               <div class="emoji-option" onclick="selectEmoji(this,'🏋️')">🏋️</div>
-              <div class="emoji-option" onclick="selectEmoji(this,'🚗')">🚗</div>
-              <div class="emoji-option" onclick="selectEmoji(this,'🎓')">🎓</div>
-              <div class="emoji-option" onclick="selectEmoji(this,'🌙')">🌙</div>
+              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
+              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
+              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
             </div>
 
             <div id="members-plan-card" class="card"
@@ -3151,7 +3151,7 @@
 
           <!-- Group Success State -->
           <div id="group-success-state" class="page-content" style="display:none; text-align:center;">
-            <div style="font-size: 64px; margin-bottom: var(--space-3);">🎉</div>
+            <div style="font-size: 64px; margin-bottom: var(--space-3);"></div>
             <div class="group-success-title">Group created!</div>
             <div style="font-size: var(--text-sm); color:var(--text-secondary); margin-bottom: var(--space-4);">Share
               this
@@ -3173,7 +3173,7 @@
           <div id="group-detail-header"></div>
           <div class="page-content">
             <div class="group-detail-hero">
-              <div id="group-detail-emoji" class="group-detail-emoji">⏰</div>
+              <div id="group-detail-emoji" class="group-detail-emoji"></div>
               <div id="group-detail-name" class="group-detail-name"></div>
               <div id="group-detail-meta" class="group-detail-meta">···</div>
             </div>
@@ -3182,7 +3182,7 @@
               <div class="info-row">
                 <span class="info-row-label">Invite Code</span>
                 <span class="info-row-value"><span id="detail-invite-code">···</span> <span class="copy-icon"
-                    onclick="copyToClipboard(document.getElementById('detail-invite-code').textContent); showToast('Invite code copied!', 'success')">📋</span></span>
+                    onclick="copyToClipboard(document.getElementById('detail-invite-code').textContent); showToast('Invite code copied!', 'success')"></span></span>
               </div>
             </div>
 
@@ -3194,7 +3194,7 @@
 
             <!-- Live Wake Status (shown when an alarm session is active) -->
             <div id="live-status-section" style="display:none; margin-bottom:var(--space-4);">
-              <div class="section-title">Live Wake Status 🔴</div>
+              <div class="section-title">Live Wake Status </div>
               <div class="card" style="padding:0; overflow:hidden;" id="live-status-list">
                 <!-- Rendered by JS -->
               </div>
@@ -3213,7 +3213,7 @@
             <div id="alarm-history-section" style="margin-bottom:var(--space-4);">
               <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;"
                 onclick="toggleAlarmHistory()">
-                <div class="section-title" style="margin-bottom:0;">📋 Past Alarms</div>
+                <div class="section-title" style="margin-bottom:0;"> Past Alarms</div>
                 <span id="history-toggle-icon" style="font-size:14px; color:var(--text-secondary); transition:transform 0.2s;">▼</span>
               </div>
               <div id="alarm-history-list" style="display:none; margin-top:var(--space-3);">
@@ -3309,8 +3309,8 @@
                   class="option-value">›</span></div>
               <div class="option-row" style="cursor:pointer;"><span class="option-label">Terms of Service</span><span
                   class="option-value">›</span></div>
-              <div class="option-row" style="cursor:pointer;" onclick="showToast('Thanks for the love! ⭐', 'success')">
-                <span class="option-label">Rate Wakeit ⭐</span><span class="option-value">›</span>
+              <div class="option-row" style="cursor:pointer;" onclick="showToast('Thanks for the love! ', 'success')">
+                <span class="option-label">Rate Wakeit </span><span class="option-value">›</span>
               </div>
             </div>
 
@@ -3336,21 +3336,21 @@
             style="width:360px;height:360px;top:calc(50% - 290px);left:calc(50% - 180px);animation-delay:1.2s;"></div>
 
           <div style="display:flex; flex-direction:column; align-items:center; padding-top:60px; width:100%;">
-            <div class="alarm-bell">🔔</div>
+            <div class="alarm-bell"></div>
             <div class="alarm-time-display" id="ringing-time">07:30 AM</div>
             <div class="alarm-group-label" id="ringing-group-label">Ringing for: Your Group</div>
           </div>
 
           <!-- Wake Status Buttons -->
-          <div class="wake-status-title">Are you awake? 👋</div>
+          <div class="wake-status-title">Are you awake? </div>
           <div class="wake-status-btns">
             <button class="wake-btn wake-btn-awake" id="btn-i-am-awake" onclick="recordWakeAttempt('awake')">
-              <span class="wake-btn-icon">🌅</span>
+              <span class="wake-btn-icon"></span>
               <span class="wake-btn-label">I'm Awake</span>
               <span class="wake-attempt-count" id="wake-awake-count"></span>
             </button>
             <button class="wake-btn wake-btn-sleeping" id="btn-still-sleeping" onclick="recordWakeAttempt('sleeping')">
-              <span class="wake-btn-icon">😴</span>
+              <span class="wake-btn-icon"></span>
               <span class="wake-btn-label">Still Sleeping</span>
               <span class="wake-attempt-count" id="wake-sleeping-count"></span>
             </button>
@@ -3368,7 +3368,7 @@
           <div class="page-content">
             <div class="wake-alarm-card" id="wake-alarm-card">
               <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div class="wake-alarm-group" id="wake-alarm-group">🌅 Your Group</div>
+                <div class="wake-alarm-group" id="wake-alarm-group"> Your Group</div>
                 <div id="wake-live-badge" style="display:flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:#FF3B30; letter-spacing:0.5px;">
                   <span style="width:8px;height:8px;border-radius:50%;background:#FF3B30;display:inline-block;animation:pulse 1.5s ease-in-out infinite;"></span>
                   LIVE
@@ -3382,8 +3382,8 @@
             <!-- Filter tabs (admin only, hidden for members) -->
             <div class="pill-tabs" id="wake-filter-tabs" style="margin-bottom: var(--space-4); display:none;">
               <button class="pill-tab active" onclick="filterWake('all', this)">All Members</button>
-              <button class="pill-tab" onclick="filterWake('awake', this)">Awake ✅</button>
-              <button class="pill-tab" onclick="filterWake('sleeping', this)">Sleeping 😴</button>
+              <button class="pill-tab" onclick="filterWake('awake', this)">Awake </button>
+              <button class="pill-tab" onclick="filterWake('sleeping', this)">Sleeping </button>
             </div>
 
             <!-- Member list — JS injects admin-detail or member-readonly rows -->
@@ -3407,7 +3407,7 @@
         <div class="modal-handle"></div>
         <div class="modal-title">Select Group</div>
         <div class="group-card" onclick="closeModal('modal-groups')">
-          <span class="group-emoji">🌅</span>
+          <span class="group-emoji"></span>
           <div class="group-info">
             <div class="group-name">Morning Squad</div>
             <div class="group-meta">5 members</div>
@@ -3502,12 +3502,12 @@
 
         // Update splash icon
         const splashIcon = document.querySelector('.splash-icon');
-        if (splashIcon) splashIcon.textContent = t === 'day' ? '☀️' : '🌙';
+        if (splashIcon) splashIcon.textContent = t === 'day' ? '☀️' : '';
 
         // Update greeting
         const greetIcon = document.getElementById('greeting-icon');
         const greetText = document.getElementById('greeting-text');
-        if (greetIcon) greetIcon.textContent = t === 'day' ? '☀️' : '🌙';
+        if (greetIcon) greetIcon.textContent = t === 'day' ? '☀️' : '';
         if (greetText) greetText.textContent = t === 'day' ? 'Good morning' : 'Good night';
       }
 
@@ -3598,7 +3598,7 @@
             style="margin-top:8px;padding:14px 32px;border-radius:999px;
                    background:linear-gradient(135deg,#C84BFF,#8B5CF6);color:#fff;
                    border:none;font-size:16px;font-weight:700;cursor:pointer;">
-            🔄 Reload App
+             Reload App
           </button>
           <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:8px;">${errMsg || ''}</div>`;
         document.body.appendChild(fb);
@@ -3671,7 +3671,7 @@
         // Grant unlimited pro plan
         localStorage.setItem('wakeit_plan_type', 'pro');
         localStorage.setItem('wakeit_onboarded', '1');
-        console.log('[Wakeit] 🔓 DEV PREVIEW MODE active — auth bypassed, jumping to home');
+        console.log('[Wakeit]  DEV PREVIEW MODE active — auth bypassed, jumping to home');
       }
 
       /* _authReady — resolves once onAuthStateChange fires its first event.
@@ -3738,7 +3738,7 @@
             }
 
             if (event === 'SIGNED_IN') {
-              showToast('Account created! 🎉', 'success');
+              showToast('Account created! ', 'success');
               // Only navigate if appInit() has already finished its boot route.
               // If boot is still running, appInit() will handle routing itself.
               if (_bootDone) {
@@ -3860,7 +3860,7 @@
             if (pt !== null && !isPlanActive()) {
               // Plan type IS set but genuinely expired/invalid — block
               console.warn('[Wakeit] PLAN GATE blocked route:', hash, '— plan expired, planType=', pt);
-              showToast('Choose a plan to access Wakeit 🚀', 'info');
+              showToast('Choose a plan to access Wakeit ', 'info');
               setTimeout(() => openModal('modal-plans'), 400);
               navigate('#/home');
               return;
@@ -3980,30 +3980,30 @@
         const name = AppState.profile?.name || AppState.profile?.full_name || AppState.user?.email?.split('@')[0] || 'User';
         const initials = name.trim().split(/\s+/).map(n => n[0] || '').join('').toUpperCase().slice(0, 2) || 'U';
         const items = [
-          { icon: '⏰', label: 'Alarms', hash: '#/home' },
-          { icon: '👥', label: 'Groups', hash: '#/groups' },
+          { icon: '', label: 'Alarms', hash: '#/home' },
+          { icon: '', label: 'Groups', hash: '#/groups' },
           { icon: '⚙️', label: 'Settings', hash: '#/settings' },
         ];
 
-        let planStatusStr = "⭐ Upgrade Plan";
+        let planStatusStr = " Upgrade Plan";
         let planBtnTitle = "View pricing plans";
         let planBtnClass = "sidebar-upgrade-btn";
         const planType = localStorage.getItem('wakeit_plan_type');
         const planStart = parseInt(localStorage.getItem('wakeit_plan_start') || '0', 10);
 
         if (planType === 'member' || planType === 'admin' || planType === 'organisation') {
-          const planLabels = { member: '👤 Member', admin: '⭐ Admin', organisation: '🏢 Organisation' };
+          const planLabels = { member: ' Member', admin: ' Admin', organisation: ' Organisation' };
           planStatusStr = `${planLabels[planType]} Plan`;
           planBtnTitle = "Manage your plan";
           planBtnClass = "sidebar-upgrade-btn sidebar-plan-active";
         } else if (planType === 'free_trial') {
           const daysLeft = Math.max(0, 3 - Math.floor((Date.now() - planStart) / (1000 * 60 * 60 * 24)));
-          planStatusStr = daysLeft > 0 ? `⏳ Trial: ${daysLeft}d left` : '⭐ Upgrade Plan';
+          planStatusStr = daysLeft > 0 ? ` Trial: ${daysLeft}d left` : ' Upgrade Plan';
           planBtnTitle = daysLeft > 0 ? "Upgrade your plan" : "Your trial has expired";
         }
 
         return `<aside class="app-sidebar" id="app-sidebar">
-        <div class="sidebar-logo">Wakeit 🔔</div>
+        <div class="sidebar-logo">Wakeit </div>
         <nav class="sidebar-nav">
           ${items.map(item => `
             <div class="sidebar-nav-item ${activeHash === item.hash ? 'active' : ''}"
@@ -4027,8 +4027,8 @@
         const el = document.getElementById(id);
         if (!el) return;
         const tabs = [
-          { key: 'alarms', label: 'Alarms', icon: '⏰', hash: '#/home' },
-          { key: 'groups', label: 'Groups', icon: '👥', hash: '#/groups' },
+          { key: 'alarms', label: 'Alarms', icon: '', hash: '#/home' },
+          { key: 'groups', label: 'Groups', icon: '', hash: '#/groups' },
           { key: 'settings', label: 'Settings', icon: '⚙️', hash: '#/settings' },
         ];
         el.innerHTML = tabs.map(t => `
@@ -4045,7 +4045,7 @@
           <div>
             <div class="alarm-card-time">${alarm.time}</div>
             <div class="alarm-card-label">${alarm.group}</div>
-            <div class="alarm-card-tone">🔔 ${alarm.tone}</div>
+            <div class="alarm-card-tone"> ${alarm.tone}</div>
           </div>
           </div>
           <label class="toggle">
@@ -4058,12 +4058,12 @@
       function MemberStatusRow(member, status, nudgeable) {
         const initials = member.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
         const badge = status === 'awake'
-          ? `<span class="member-badge badge-awake">✅ Awake</span>`
+          ? `<span class="member-badge badge-awake"> Awake</span>`
           : status === 'sleeping'
-            ? `<span class="member-badge badge-sleeping">😴 Sleeping</span>`
+            ? `<span class="member-badge badge-sleeping"> Sleeping</span>`
             : `<span class="member-badge badge-pending">Pending</span>`;
         const nudge = nudgeable && status === 'sleeping'
-          ? `<button class="nudge-btn" id="nudge-${member.id}" onclick="sendNudge('${member.id}')">🔔 Nudge</button>`
+          ? `<button class="nudge-btn" id="nudge-${member.id}" onclick="sendNudge('${member.id}')"> Nudge</button>`
           : '';
         return `
         <div class="member-row">
@@ -4245,7 +4245,7 @@
               });
             }
 
-            showToast('Account created! 🎉', 'success');
+            showToast('Account created! ', 'success');
             navigate('#/home');
             showPlansModalIfNeeded();
           };
@@ -4291,7 +4291,7 @@
                   }
                 });
             }
-            showToast('Welcome back! 👋', 'success');
+            showToast('Welcome back! ', 'success');
             // Navigate to home immediately on success
             navigate('#/home');
             // Show pricing popup asynchronously after navigation
@@ -4397,7 +4397,7 @@
         if (!memberships?.length) {
           localStorage.removeItem(cacheKey);
           if (list) list.innerHTML = `<div class="empty-state">
-          <div class="empty-icon">⏰</div>
+          <div class="empty-icon"></div>
           <div class="empty-title">No alarms yet</div>
           <div class="empty-sub">Create a group and set your first alarm!</div>
         </div>`;
@@ -4425,7 +4425,7 @@
         if (!alarms?.length) {
           localStorage.removeItem(cacheKey);
           if (list) list.innerHTML = `<div class="empty-state">
-          <div class="empty-icon">⏰</div>
+          <div class="empty-icon"></div>
           <div class="empty-title">No active alarms</div>
           <div class="empty-sub">Tap + to set an alarm for your group.</div>
         </div>`;
@@ -4459,7 +4459,7 @@
         }
         const nextLabelEl = document.getElementById('next-alarm-label');
         const nextGroup = groupMap[next.group_id];
-        if (nextLabelEl) nextLabelEl.textContent = `${nextGroup?.emoji || '⏰'} ${nextGroup?.name || 'Your Group'}`;
+        if (nextLabelEl) nextLabelEl.textContent = `${nextGroup?.emoji || ''} ${nextGroup?.name || 'Your Group'}`;
 
         // Render all alarms
         if (list) list.innerHTML = alarms.map(a => {
@@ -4531,7 +4531,7 @@
         // Pre-select current group in group picker
         const groupLabel = document.getElementById('alarm-group-label');
         if (groupLabel && AppState.currentGroup) {
-          groupLabel.textContent = `${AppState.currentGroup.emoji || '⏰'} ${AppState.currentGroup.name}`;
+          groupLabel.textContent = `${AppState.currentGroup.emoji || ''} ${AppState.currentGroup.name}`;
         }
 
         const btn = document.getElementById('btn-set-alarm');
@@ -4636,7 +4636,7 @@
 
         if (reachable.length > 0) {
           html += `<div style="margin-bottom:6px;">
-            <span style="color:#34C759;">✅</span>
+            <span style="color:#34C759;"></span>
             <strong style="color:var(--text-primary);">${reachable.length}</strong> reachable:
             <span style="color:var(--text-primary);">${reachable.join(', ')}</span>
           </div>`;
@@ -4750,7 +4750,7 @@
         }
 
         scheduleLocalAlarm(alarm);
-        showToast('⏰ Alarm set for your group!', 'success');
+        showToast(' Alarm set for your group!', 'success');
         navigate('#/home');
         if (btn) { btn.disabled = false; btn.textContent = 'Set Alarm'; }
       }
@@ -4930,7 +4930,7 @@
           // Determine icon: voice notes vs uploaded audio
           listEl.innerHTML = files.map(f => {
             const isVoice = f.name.includes('voicenote') || f.name.endsWith('.webm');
-            const icon = isVoice ? '🎙️' : '📁';
+            const icon = isVoice ? '🎙️' : '';
             const rawName = f.name.replace(/^\d+_/, '').replace(/\.[^/.]+$/, ''); // strip timestamp prefix and extension
             const displayName = decodeURIComponent(rawName).replace(/_/g, ' ');
             const path = `${uid}/${f.name}`;
@@ -4966,7 +4966,7 @@
 
         AppState.selectedTone = { name: displayName, type: 'upload', url: publicUrl };
         const nameEl = document.getElementById('selected-tone-name');
-        if (nameEl) nameEl.textContent = '📁 ' + displayName;
+        if (nameEl) nameEl.textContent = ' ' + displayName;
         showToast('Tone selected: ' + displayName, 'success');
       }
 
@@ -5080,7 +5080,7 @@
 
         if (!allIds.length) {
           if (list) list.innerHTML = `<div class="empty-state">
-          <div class="empty-icon">👥</div>
+          <div class="empty-icon"></div>
           <div class="empty-title">No groups yet</div>
           <div class="empty-sub">Create a group or join one with an invite code.</div>
         </div>`;
@@ -5107,7 +5107,7 @@
 
         if (list) list.innerHTML = groups.map(g => `
         <div class="group-card" onclick="openGroupDetail('${g.id}')">
-          <span class="group-emoji">${g.emoji || '⏰'}</span>
+          <span class="group-emoji">${g.emoji || ''}</span>
           <div class="group-info">
             <div class="group-name">${g.name}</div>
             <div class="group-meta">Code: ${g.invite_code}</div>
@@ -5127,7 +5127,7 @@
       }
 
       /* ------ S-09 Create Group (Stage 4 — real Supabase insert) ------ */
-      let selectedEmoji = '⏰';
+      let selectedEmoji = '';
       function initCreateGroup() {
         AppHeader('create-group-header', 'New Group', true, '#/groups', false);
         // Reset form state
@@ -5164,7 +5164,7 @@
         }
 
         // Reset emoji to default
-        selectedEmoji = '⏰';
+        selectedEmoji = '';
         document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
         const defaultEmoji = document.querySelector('.emoji-option');
         if (defaultEmoji) defaultEmoji.classList.add('selected');
@@ -5244,7 +5244,7 @@
           if (contentEl) contentEl.style.display = 'none';
           if (successEl) successEl.style.display = '';
           if (codeEl) codeEl.textContent = result.invite_code || code;
-          showToast('Group created! 🎉', 'success');
+          showToast('Group created! ', 'success');
 
         } catch (err) {
           console.error('[Wakeit] doCreateGroup unexpected error:', err);
@@ -5285,7 +5285,7 @@
         const nameEl = document.getElementById('group-detail-name');
         const metaEl = document.getElementById('group-detail-meta');
         const codeEl = document.getElementById('detail-invite-code');
-        if (emojiEl) emojiEl.textContent = group.emoji || '⏰';
+        if (emojiEl) emojiEl.textContent = group.emoji || '';
         if (nameEl) nameEl.textContent = group.name;
         if (codeEl) codeEl.textContent = group.invite_code;
 
@@ -5349,7 +5349,7 @@
           const initials = n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
           const isOwner = m.user_id === group.owner_id;
           const removeBtn = (isAdmin && !isOwner)
-            ? `<button class="remove-member-btn" onclick="removeMember('${group.id}','${m.user_id}','${n.replace(/'/g, '&#39;')}')" title="Remove member">🚫 Remove</button>`
+            ? `<button class="remove-member-btn" onclick="removeMember('${group.id}','${m.user_id}','${n.replace(/'/g, '&#39;')}')" title="Remove member"> Remove</button>`
             : '';
           return `<div class="member-row" style="justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:10px;">
@@ -5421,7 +5421,7 @@
 
           if (error || !pastAlarms || pastAlarms.length === 0) {
             list.innerHTML = `<div class="card" style="text-align:center;padding:24px;color:var(--text-secondary);">
-              <div style="font-size:28px;margin-bottom:8px;">📭</div>
+              <div style="font-size:28px;margin-bottom:8px;"></div>
               No past alarms yet. Set an alarm to start tracking history.
             </div>`;
             list.dataset.loaded = '1';
@@ -5465,7 +5465,7 @@
           return `<div class="card" style="padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px;">
             <div style="flex-shrink:0; width:44px; height:44px; border-radius:12px;
               background:rgba(200,75,255,0.12); display:flex; align-items:center; justify-content:center;
-              font-size:18px;">⏰</div>
+              font-size:18px;"></div>
             <div style="flex:1; min-width:0;">
               <div style="display:flex; align-items:baseline; gap:8px;">
                 <span style="font-size:16px; font-weight:700; color:var(--text-primary);">${timeStr}</span>
@@ -5473,7 +5473,7 @@
               </div>
               <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
                 ${stats.total > 0
-                  ? `✅ ${stats.awake} awake · 😴 ${stats.sleeping} sleeping · ${stats.total} total`
+                  ? ` ${stats.awake} awake ·  ${stats.sleeping} sleeping · ${stats.total} total`
                   : 'No responses recorded'}
               </div>
             </div>
@@ -5548,7 +5548,7 @@
         const alarmTime = new Date(alarm.alarm_time);
         const timeStr = alarmTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         const groupName = alarm.groups?.name || 'Your Group';
-        const groupEmoji = alarm.groups?.emoji || '⏰';
+        const groupEmoji = alarm.groups?.emoji || '';
 
         // Calculate time ago
         const minsAgo = Math.floor((Date.now() - alarmTime.getTime()) / 60000);
@@ -5657,10 +5657,10 @@
           const status = latestMap[m.user_id] || 'pending';
           const dotCls = status === 'awake' ? 'dot-awake' : status === 'sleeping' ? 'dot-sleeping' : 'dot-pending';
           const badge = status === 'awake'
-            ? `<span class="member-badge badge-awake">✅ Awake</span>`
+            ? `<span class="member-badge badge-awake"> Awake</span>`
             : status === 'sleeping'
-              ? `<span class="member-badge badge-sleeping">💤 Sleeping</span>`
-              : `<span class="member-badge" style="background:rgba(142,142,147,0.15);color:var(--text-secondary);">⏳ Pending</span>`;
+              ? `<span class="member-badge badge-sleeping"> Sleeping</span>`
+              : `<span class="member-badge" style="background:rgba(142,142,147,0.15);color:var(--text-secondary);"> Pending</span>`;
           return `<div class="live-status-row">
             <div class="live-status-dot ${dotCls}"></div>
             <div class="member-avatar" style="width:32px;height:32px;font-size:12px;">${initials}</div>
@@ -5684,11 +5684,11 @@
         if (navigator.share) {
           navigator.share({
             title: 'Join my Wakeit group!',
-            text: `Use code ${code} to join ${groupName} on Wakeit 🔔`, url: window.location.origin
+            text: `Use code ${code} to join ${groupName} on Wakeit `, url: window.location.origin
           });
         } else {
           copyToClipboard(code);
-          showToast('Invite code copied! Share it now 📋', 'success');
+          showToast('Invite code copied! Share it now ', 'success');
         }
       }
 
@@ -5735,7 +5735,7 @@
                 console.log('[Wakeit L2] New alarm INSERT detected:', payload.new?.id);
                 scheduleLocalAlarm(payload.new);
                 preloadAlarmAudio(payload.new);
-                showToast('New alarm synced from your group 🔔', 'info');
+                showToast('New alarm synced from your group ', 'info');
                 loadHomeAlarms(); // Refresh list
               }).subscribe();
           }
@@ -6089,7 +6089,7 @@
 
             // Success!
             AppState.currentGroup = result;
-            showToast('Joined! Welcome to ' + result.name + ' 🎉', 'success');
+            showToast('Joined! Welcome to ' + result.name + ' ', 'success');
             notifyGroupOwner(result).catch(() => { /* silent fail */ });
             navigate('#/group-detail');
           } catch (err) {
@@ -6301,7 +6301,7 @@
         }
 
         navigate('#/home');
-        showToast(status === 'awake' ? 'Good morning! 🌅' : 'Rest up 😴 — alarm noted', 'success');
+        showToast(status === 'awake' ? 'Good morning! ' : 'Rest up  — alarm noted', 'success');
       }
 
       /**
@@ -6456,7 +6456,7 @@
         // Update alarm info card
         const groupEl = document.getElementById('wake-alarm-group');
         const timeEl = document.getElementById('wake-alarm-time');
-        if (groupEl) groupEl.textContent = (group?.emoji || '🌅') + ' ' + (group?.name || 'Your Group');
+        if (groupEl) groupEl.textContent = (group?.emoji || '') + ' ' + (group?.name || 'Your Group');
         if (alarm && timeEl) {
           timeEl.textContent = new Date(alarm.alarm_time)
             .toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -6532,7 +6532,7 @@
         const deliveredCount = wakeMembersCache.filter(m => m.push_reachable).length;
         const summaryEl = document.getElementById('wake-delivery-summary');
         if (summaryEl) {
-          summaryEl.textContent = `📡 Push delivered to ${deliveredCount}/${wakeMembersCache.length} members`;
+          summaryEl.textContent = ` Push delivered to ${deliveredCount}/${wakeMembersCache.length} members`;
         }
 
         renderWakeDashboard();
@@ -6576,7 +6576,7 @@
 
         if (filtered.length === 0) {
           list.innerHTML = `<div class="empty-state" style="padding:32px 0;">
-            <div class="empty-icon">🎉</div>
+            <div class="empty-icon"></div>
             <div class="empty-title">Everyone is awake!</div>
             <div class="empty-sub">All members have confirmed they're up.</div>
           </div>`;
@@ -6594,14 +6594,14 @@
 
         // Push delivery indicator
         const pushTag = m.push_reachable
-          ? `<span style="font-size:10px; color:#34C759; margin-left:6px;">📡 Push sent</span>`
+          ? `<span style="font-size:10px; color:#34C759; margin-left:6px;"> Push sent</span>`
           : `<span style="font-size:10px; color:#FF9500; margin-left:6px;">⚠️ No push</span>`;
 
         // Build attempt log pills
         const attemptsHtml = m.attempts.length > 0
           ? `<div class="attempt-log">${m.attempts.map(a => {
             const cls = a.status === 'awake' ? 'attempt-pill-awake' : 'attempt-pill-sleeping';
-            const icon = a.status === 'awake' ? '🌅' : '😴';
+            const icon = a.status === 'awake' ? '' : '';
             const ts = new Date(a.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
             return `<span class="attempt-pill ${cls}">${icon} #${a.attempt_number} &nbsp;${ts}</span>`;
           }).join('')}</div>`
@@ -6609,15 +6609,15 @@
 
         // Badge for latest status
         const badge = m.latest_status === 'awake'
-          ? `<span class="member-badge badge-awake">✅ Awake</span>`
+          ? `<span class="member-badge badge-awake"> Awake</span>`
           : m.latest_status === 'sleeping'
-            ? `<span class="member-badge badge-sleeping">💤 Sleeping</span>`
-            : `<span class="member-badge" style="background:rgba(142,142,147,0.15);color:var(--text-secondary);">⏳ Pending</span>`;
+            ? `<span class="member-badge badge-sleeping"> Sleeping</span>`
+            : `<span class="member-badge" style="background:rgba(142,142,147,0.15);color:var(--text-secondary);"> Pending</span>`;
 
         const nudgeBtn = (m.latest_status !== 'awake')
           ? `<button class="nudge-btn ${isNudged ? 'nudged' : ''}" id="nudge-${m.user_id}"
               onclick="sendNudge('${m.user_id}')" ${isNudged ? 'disabled' : ''}>
-              ${isNudged ? '✅ Nudged' : '🔔 Nudge'}
+              ${isNudged ? ' Nudged' : ' Nudge'}
             </button>` : '';
 
         return `<div id="wake-row-${m.user_id}" class="member-row" style="flex-direction:column; align-items:flex-start; gap:6px; padding:14px 20px; border-bottom:1px solid var(--border);">
@@ -6646,10 +6646,10 @@
         const dotCls = m.latest_status === 'awake' ? 'dot-awake'
           : m.latest_status === 'sleeping' ? 'dot-sleeping' : 'dot-pending';
         const badge = m.latest_status === 'awake'
-          ? `<span class="member-badge badge-awake">✅ Awake</span>`
+          ? `<span class="member-badge badge-awake"> Awake</span>`
           : m.latest_status === 'sleeping'
-            ? `<span class="member-badge badge-sleeping">💤 Sleeping</span>`
-            : `<span class="member-badge" style="background:rgba(142,142,147,0.15);color:var(--text-secondary);">⏳</span>`;
+            ? `<span class="member-badge badge-sleeping"> Sleeping</span>`
+            : `<span class="member-badge" style="background:rgba(142,142,147,0.15);color:var(--text-secondary);"></span>`;
         return `<div id="wake-row-${m.user_id}" class="live-status-row">
           <div class="live-status-dot ${dotCls}"></div>
           <div class="member-avatar" style="width:32px;height:32px;font-size:12px;">${initials}</div>
@@ -6674,7 +6674,7 @@
             const { error } = await db.functions.invoke('send-alarm-fcm', {
               body: {
                 user_ids: [userId],
-                title: '🔔 Wake up! Your admin is nudging you!',
+                title: ' Wake up! Your admin is nudging you!',
                 body: `Time to wake up! ${groupName} is waiting for you. Tap to confirm you're awake.`,
                 type: 'nudge'
               }
@@ -6683,7 +6683,7 @@
               showToast(`Nudge failed to send to ${memberName}`, 'error');
               console.warn('[Wakeit] Nudge FCM error:', error);
             } else {
-              showToast(`Nudge sent to ${memberName} 📡`, 'success');
+              showToast(`Nudge sent to ${memberName} `, 'success');
             }
           } else {
             showToast(`${memberName} has no device registered — nudge can't be delivered`, 'info');
@@ -6720,7 +6720,7 @@
         } else {
           dz.innerHTML = `
             <button class="btn-outline" style="width:100%;border-color:var(--sleeping-color);color:var(--sleeping-color);"
-              onclick="openModal('modal-leave-group')">🚪 Request to Leave Group</button>
+              onclick="openModal('modal-leave-group')"> Request to Leave Group</button>
             <div class="danger-text" style="margin-top:6px;">Your admin must approve before you're removed.</div>`;
         }
       }
@@ -6746,7 +6746,7 @@
             user_id: uid,
             status: 'pending'
           });
-          showToast('Leave request sent! Admin will review it. 📩', 'success');
+          showToast('Leave request sent! Admin will review it. ', 'success');
         } catch (e) {
           showToast('Couldn\'t send leave request. Check your connection and try again.', 'error');
           console.error('[Wakeit] leaveRequest error:', e);
@@ -6767,7 +6767,7 @@
           // Mark request as approved
           await db.from('leave_requests')
             .update({ status: 'approved' }).eq('id', requestId);
-          showToast(`${userName} has been removed. 👋`, 'success');
+          showToast(`${userName} has been removed. `, 'success');
           // Reload dashboard
           await loadWakeDashboard();
           await loadLeaveRequests();
@@ -6803,7 +6803,7 @@
         }
 
         container.innerHTML = `
-          <div class="section-title" style="margin-top:var(--space-4);">Pending Leave Requests 🚪</div>
+          <div class="section-title" style="margin-top:var(--space-4);">Pending Leave Requests </div>
           <div class="card" style="padding:0;overflow:hidden;">
             ${requests.map(r => {
           const name = r.profiles?.name || 'Member';
@@ -6949,10 +6949,10 @@
         if (type === 'free_trial') {
           // Free trial expired — show UI but DON'T remove localStorage
           // (removing it causes a destructive loop on next login)
-          showExpiryUI('Your 3-day free trial has ended. Choose a plan to continue 🚀');
+          showExpiryUI('Your 3-day free trial has ended. Choose a plan to continue ');
         } else if (type && type !== 'free_trial') {
           // Paid plan expired
-          showExpiryUI('Your plan has expired. Renew to keep full access 🔄');
+          showExpiryUI('Your plan has expired. Renew to keep full access ');
         }
         // If no plan type at all, showPlansModalIfNeeded handles it
       }
@@ -7105,7 +7105,7 @@
           handler: async (response) => {
             await persistPlan(planType, response.razorpay_payment_id || '');
             const labels = { member: 'Member', admin: 'Admin', organisation: 'Organisation' };
-            showToast(`${labels[planType] || planType} plan activated! 🎉`, 'success');
+            showToast(`${labels[planType] || planType} plan activated! `, 'success');
             navigate('#/home');
           }
         };
@@ -7129,7 +7129,7 @@
         localStorage.setItem('wakeit_plan_start', Date.now().toString());
         localStorage.setItem('wakeit_free_trial_used', '1');
         await persistPlan('free_trial', '');
-        showToast('🎁 Free trial started! 3 days of full access.', 'success');
+        showToast(' Free trial started! 3 days of full access.', 'success');
         navigate('#/home');
       }
 
@@ -7167,7 +7167,7 @@
         if (hasFullAccess()) {
           onAllowed();
         } else {
-          showToast(`${featureName} requires an active plan. 🔒`, 'info');
+          showToast(`${featureName} requires an active plan. `, 'info');
           setTimeout(() => openModal('modal-plans'), 1000);
         }
       }
@@ -7256,7 +7256,7 @@
         }
 
         // Server confirmed — jump to 100%
-        setUploadProgress(true, 100, 'Upload complete! ✅');
+        setUploadProgress(true, 100, 'Upload complete! ');
 
         const { data: urlData } = db.storage.from('alarm-tones').getPublicUrl(path);
         const publicUrl = urlData?.publicUrl || '';
@@ -7272,10 +7272,10 @@
         // Update the checkmarks — show a custom check for uploaded tone
         document.querySelectorAll('[id^="tone-check-"]').forEach(el => el.style.opacity = '0');
         const nameEl = document.getElementById('selected-tone-name');
-        if (nameEl) nameEl.textContent = '📁 ' + toneName;
+        if (nameEl) nameEl.textContent = ' ' + toneName;
 
         await cacheTone(publicUrl);
-        showToast(`Uploaded: ${toneName} 🎵`, 'success');
+        showToast(`Uploaded: ${toneName} `, 'success');
         // Refresh saved list so new tone appears immediately
         loadCustomTones();
 
@@ -7358,7 +7358,7 @@
                 const { data: { publicUrl } } = db.storage.from('alarm-tones').getPublicUrl(path);
                 AppState.selectedTone = { name: 'My Voice Note', type: 'voicenote', url: publicUrl };
                 await cacheTone(publicUrl);
-                setUploadProgress(true, 100, 'Voice note saved! ✅');
+                setUploadProgress(true, 100, 'Voice note saved! ');
                 loadCustomTones();
               } else {
                 clearInterval(fakeInterval);
@@ -7377,8 +7377,8 @@
             // Update selected tone name
             document.querySelectorAll('[id^="tone-check-"]').forEach(el => el.style.opacity = '0');
             const nameEl = document.getElementById('selected-tone-name');
-            if (nameEl) nameEl.textContent = 'My Voice Note 🎤';
-            showToast('Voice note ready! 🎤', 'success');
+            if (nameEl) nameEl.textContent = 'My Voice Note ';
+            showToast('Voice note ready! ', 'success');
             setTimeout(() => setUploadProgress(false, 0, ''), 1500);
           };
 
@@ -7412,17 +7412,17 @@
         const planType = localStorage.getItem('wakeit_plan_type');
 
         if (planType === 'organisation') {
-          if (pill) { pill.className = 'plan-pill pill-pro'; pill.textContent = '🏢 Organisation'; }
+          if (pill) { pill.className = 'plan-pill pill-pro'; pill.textContent = ' Organisation'; }
           if (label) label.textContent = 'Organisation plan · up to 10 groups, 50 members';
         } else if (planType === 'admin') {
-          if (pill) { pill.className = 'plan-pill pill-pro'; pill.textContent = '⭐ Admin'; }
+          if (pill) { pill.className = 'plan-pill pill-pro'; pill.textContent = ' Admin'; }
           if (label) label.textContent = 'Admin plan · up to 5 groups, 20 members';
         } else if (planType === 'member') {
-          if (pill) { pill.className = 'plan-pill pill-free'; pill.textContent = '👤 Member'; }
+          if (pill) { pill.className = 'plan-pill pill-free'; pill.textContent = ' Member'; }
           if (label) label.textContent = 'Member plan · join groups only · ₹49/yr';
         } else if (planType === 'free_trial') {
           const days = getFreeDaysLeft();
-          if (pill) { pill.className = 'plan-pill pill-free'; pill.textContent = '🎁 Free Trial'; }
+          if (pill) { pill.className = 'plan-pill pill-free'; pill.textContent = ' Free Trial'; }
           if (label) label.textContent = days > 0
             ? `${days} day${days !== 1 ? 's' : ''} left · all features unlocked`
             : 'Free trial expired';
@@ -7482,7 +7482,7 @@
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;';
         overlay.innerHTML = `
           <div style="background:var(--card-bg);border-radius:var(--radius-xl);padding:24px;max-width:340px;text-align:center;">
-            <div style="font-size:48px;margin-bottom:12px;">🔔</div>
+            <div style="font-size:48px;margin-bottom:12px;"></div>
             <div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Enable Alarm Notifications</div>
             <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:20px;">
               Wakeit needs notifications to wake you up — even when the app is closed.
@@ -7520,7 +7520,7 @@
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
             await fetchAndSaveFcmToken();
-            showToast('Notifications enabled! 🔔', 'success');
+            showToast('Notifications enabled! ', 'success');
           } else {
             showToast('Notifications not enabled. You can enable them later in Settings.', 'info');
           }
@@ -7619,7 +7619,7 @@
         await db.functions.invoke('send-alarm-fcm', {
           body: {
             user_ids: [group.owner_id],
-            title: '👥 New Member!',
+            title: ' New Member!',
             body: `${joinerName} just joined ${group.name}`,
             type: 'new-member',
           }
@@ -7973,7 +7973,7 @@
         deferredInstallPrompt = null;
         localStorage.setItem('wakeit_pwa_installed', '1');
         dismissInstallBanner();
-        showToast('Wakeit installed! 🎉', 'success');
+        showToast('Wakeit installed! ', 'success');
       });
 
       /**
@@ -8025,7 +8025,7 @@
           const result = await deferredInstallPrompt.userChoice;
           if (result.outcome === 'accepted') {
             localStorage.setItem('wakeit_pwa_installed', '1');
-            showToast('Wakeit installed! 🎉', 'success');
+            showToast('Wakeit installed! ', 'success');
           }
           deferredInstallPrompt = null;
           dismissInstallBanner();
@@ -8061,7 +8061,7 @@
         <div class="card" style="margin-bottom:12px;border:2px solid rgba(48,209,88,0.4);position:relative;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
             <div>
-              <div style="font-size:16px;font-weight:800;">🆓 Free Trial</div>
+              <div style="font-size:16px;font-weight:800;"> Free Trial</div>
               <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">No card needed</div>
             </div>
             <div style="text-align:right;">
@@ -8082,7 +8082,7 @@
         <div class="card" style="margin-bottom:12px;border:2px solid rgba(100,210,255,0.35);position:relative;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
             <div>
-              <div style="font-size:16px;font-weight:800;">👤 Member</div>
+              <div style="font-size:16px;font-weight:800;"> Member</div>
               <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Join groups, can't create</div>
             </div>
             <div style="text-align:right;">
@@ -8107,7 +8107,7 @@
             MOST POPULAR</div>
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
             <div>
-              <div style="font-size:16px;font-weight:800;">⭐ Admin</div>
+              <div style="font-size:16px;font-weight:800;"> Admin</div>
               <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Create &amp; manage groups</div>
             </div>
             <div style="text-align:right;">
@@ -8131,7 +8131,7 @@
           style="margin-bottom:16px;border:2px solid rgba(255,214,10,0.4);background:linear-gradient(135deg,rgba(255,214,10,0.06),rgba(255,159,10,0.06));">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
             <div>
-              <div style="font-size:16px;font-weight:800;">🏢 Organisation</div>
+              <div style="font-size:16px;font-weight:800;"> Organisation</div>
               <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">For teams &amp; institutions</div>
             </div>
             <div style="text-align:right;">
@@ -8152,7 +8152,7 @@
             onclick="activatePlan('organisation')">Get Organisation — ₹4,999/yr</button>
         </div>
 
-        <div style="text-align:center;font-size:11px;color:var(--text-secondary);margin-bottom:8px;">🔒 Secure payment
+        <div style="text-align:center;font-size:11px;color:var(--text-secondary);margin-bottom:8px;"> Secure payment
           via Razorpay</div>
         <button id="plans-maybe-later-btn"
           style="width:100%;background:none;border:none;color:var(--text-secondary);font-size:12px;padding:8px;cursor:pointer;"
@@ -8176,7 +8176,7 @@
         font-size:36px; margin-bottom:24px;
         animation:pulse 1.5s ease-in-out infinite;
         box-shadow:0 0 40px rgba(255,69,58,0.4);
-      ">⏰</div>
+      "></div>
       <div style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px;">You Missed an Alarm!</div>
       <div id="missed-alarm-detail" style="font-size:14px; color:rgba(255,255,255,0.7); margin-bottom:6px;"></div>
       <div id="missed-alarm-time-ago" style="font-size:13px; color:rgba(255,255,255,0.5); margin-bottom:28px;"></div>
@@ -8210,7 +8210,7 @@
           background:linear-gradient(135deg, var(--primary), var(--accent, #FF6B6B));
           display:flex; align-items:center; justify-content:center;
           font-size:22px; flex-shrink:0;
-        ">⏰</div>
+        "></div>
         <div style="flex:1; min-width:0;">
           <div style="font-size:15px; font-weight:700; color:#fff; margin-bottom:2px;">Install Wakeit</div>
           <div style="font-size:12px; color:rgba(255,255,255,0.6); line-height:1.4;">
