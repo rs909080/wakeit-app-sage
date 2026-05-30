@@ -3695,7 +3695,7 @@
       const _profileReady = new Promise(resolve => { _profileReadyResolve = resolve; });
 
       /* Auth state listener — single source of truth */
-      db.auth.onAuthStateChange(async (event, session) => {
+      db.auth.onAuthStateChange((event, session) => {
         // DEV PREVIEW MODE: ignore real auth events — keep the mock user
         if (DEV_PREVIEW) {
           if (_authReadyResolve) { _authReadyResolve(); _authReadyResolve = null; }
@@ -3708,6 +3708,25 @@
         if (_authReadyResolve) { _authReadyResolve(); _authReadyResolve = null; }
 
         if (AppState.user) {
+          // Asynchronously trigger profile loading and background initialization
+          // outside of the main onAuthStateChange event flow to avoid deadlocks.
+          handleUserSessionChange(event, session);
+        } else {
+          AppState.profile = null;
+          // No user — resolve _profileReady so appInit() doesn't hang
+          if (_profileReadyResolve) { _profileReadyResolve(); _profileReadyResolve = null; }
+          // Only redirect on explicit SIGNED_OUT. On initial load with no session,
+          // appInit() handles routing after _authReady resolves.
+          if (event === 'SIGNED_OUT') {
+            window.location.hash = '#/login';
+            setTimeout(() => onRouteChange(), 50);
+          }
+        }
+      });
+
+      async function handleUserSessionChange(event, session) {
+        console.log('[Wakeit] handleUserSessionChange entered, event:', event);
+        try {
           // --- Legacy plan migration ---
           // If user has old 'wakeit_plan' key but no new 'wakeit_plan_type',
           // create the new key so isPlanActive() works correctly.
@@ -3720,19 +3739,25 @@
             console.log('[Wakeit] Migrated legacy plan key:', legacyPlan, '→ free_trial');
           }
           // Load profile into AppState
-          let { data: prof } = await db.from('profiles').select('*').eq('id', AppState.user.id).single();
+          let { data: prof, error: profErr } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+          if (profErr) {
+            console.warn('[Wakeit] Profile query non-fatal error:', profErr.message);
+          }
 
           if (!prof) {
             // Create profile for OAuth signup
-            const email = AppState.user.email || '';
-            const name = AppState.user.user_metadata?.full_name || AppState.user.user_metadata?.name || email.split('@')[0] || 'User';
-            await db.from('profiles').upsert({
-              id: AppState.user.id,
+            const email = session.user.email || '';
+            const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0] || 'User';
+            const { error: upsertErr } = await db.from('profiles').upsert({
+              id: session.user.id,
               name,
               email,
               plan_type: 'free_trial'
             }, { onConflict: 'id' });
-            prof = { id: AppState.user.id, name, email, plan_type: 'free_trial' };
+            if (upsertErr) {
+              console.error('[Wakeit] Profile creation error:', upsertErr.message);
+            }
+            prof = { id: session.user.id, name, email, plan_type: 'free_trial' };
 
             localStorage.setItem('wakeit_plan_type', 'free_trial');
             if (!localStorage.getItem('wakeit_plan_start')) {
@@ -3741,30 +3766,37 @@
 
             if (event === 'SIGNED_IN') {
               showToast('Account created! ', 'success');
-              // Only navigate if appInit() has already finished its boot route.
-              // If boot is still running, appInit() will handle routing itself.
+              // Only navigate if appInit() has already finished its boot route,
+              // and the user is actually on a guest screen (so we don't redirect refreshed users).
+              const isGuestHash = PUBLIC_ROUTES.includes(window.location.hash) || !window.location.hash;
+              if (isGuestHash) {
+                if (_bootDone) {
+                  navigate('#/home');
+                  setTimeout(() => showPlansModalIfNeeded(), 500);
+                } else {
+                  // appInit() is still running — it will route correctly on its own
+                  _profileReady.then(() => {
+                    if (_bootDone) return; // appInit already routed
+                    navigate('#/home');
+                    setTimeout(() => showPlansModalIfNeeded(), 500);
+                  });
+                }
+              }
+            }
+          } else if (event === 'SIGNED_IN') {
+            // Only redirect on SIGNED_IN if user is on a guest screen (avoiding redirect on session restore / refresh)
+            const isGuestHash = PUBLIC_ROUTES.includes(window.location.hash) || !window.location.hash;
+            if (isGuestHash) {
               if (_bootDone) {
                 navigate('#/home');
                 setTimeout(() => showPlansModalIfNeeded(), 500);
               } else {
-                // appInit() is still running — it will route correctly on its own
                 _profileReady.then(() => {
-                  if (_bootDone) return; // appInit already routed
+                  if (_bootDone) return;
                   navigate('#/home');
                   setTimeout(() => showPlansModalIfNeeded(), 500);
                 });
               }
-            }
-          } else if (event === 'SIGNED_IN') {
-            if (_bootDone) {
-              navigate('#/home');
-              setTimeout(() => showPlansModalIfNeeded(), 500);
-            } else {
-              _profileReady.then(() => {
-                if (_bootDone) return;
-                navigate('#/home');
-                setTimeout(() => showPlansModalIfNeeded(), 500);
-              });
             }
           }
 
@@ -3793,23 +3825,14 @@
           // Check for missed alarms (delayed so it doesn't block UI)
           setTimeout(() => checkMissedAlarms(), 2000);
 
+        } catch (err) {
+          console.error('[Wakeit] handleUserSessionChange unexpected exception:', err);
+        } finally {
           // Profile + plan data is now loaded — resolve the gate so appInit() can route
           console.log('[Wakeit] Profile ready — plan_type:', localStorage.getItem('wakeit_plan_type'));
           if (_profileReadyResolve) { _profileReadyResolve(); _profileReadyResolve = null; }
-        } else {
-          AppState.profile = null;
-          // No user — resolve _profileReady so appInit() doesn't hang
-          if (_profileReadyResolve) { _profileReadyResolve(); _profileReadyResolve = null; }
-          // Only redirect on explicit SIGNED_OUT. On initial load with no session,
-          // appInit() handles routing after _authReady resolves.
-          if (event === 'SIGNED_OUT') {
-            window.location.hash = '#/login';
-            setTimeout(() => onRouteChange(), 50);
-          }
-          // NOTE: removed the else-if redirect here — appInit() now handles
-          // initial routing correctly after _authReady resolves.
         }
-      });
+      }
 
       function navigate(hash) {
         if (!hash || hash === 'undefined' || hash === '#/undefined' || hash === '#undefined') {
