@@ -3492,6 +3492,16 @@
         document.body.classList.remove('theme-day', 'theme-night');
         document.body.classList.add('theme-' + t);
 
+        // Dynamically update theme-color meta tag
+        const isNightTheme = t === 'night';
+        let meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.name = 'theme-color';
+          document.head.appendChild(meta);
+        }
+        meta.content = isNightTheme ? '#C84BFF' : '#4CD964';
+
         // Update splash icon
         const splashIcon = document.querySelector('.splash-icon');
         if (splashIcon) splashIcon.textContent = t === 'day' ? '☀️' : '';
@@ -7899,7 +7909,11 @@
         // Now safe to route — AppState.user AND plan data are set (or null)
         // ALWAYS call onRouteChange() directly — never rely on hashchange firing.
         try {
-          if (!window.location.hash || window.location.hash === '#') {
+          const urlParams = new URLSearchParams(window.location.search);
+          const isPwa = urlParams.get('source') === 'pwa';
+          if (isPwa && AppState.user) {
+            history.replaceState(null, '', '#/home');
+          } else if (!window.location.hash || window.location.hash === '#') {
             // First-ever visit: no hash yet. Set to splash then call onRouteChange directly.
             history.replaceState(null, '', '#/splash');
           }
