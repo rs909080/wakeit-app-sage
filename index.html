@@ -3680,6 +3680,11 @@
       let _authReadyResolve;
       const _authReady = new Promise(resolve => { _authReadyResolve = resolve; });
 
+      // _bootDone — true after appInit() finishes its first route render.
+      // onAuthStateChange SIGNED_IN navigation must wait for this so it
+      // doesn't race with the initial appInit() routing.
+      let _bootDone = false;
+
       /* _profileReady — resolves once the user profile + plan data are loaded
          into localStorage. appInit() must wait for this before routing to
          plan-gated screens, otherwise isPlanActive() sees stale/empty data
@@ -3734,22 +3739,30 @@
 
             if (event === 'SIGNED_IN') {
               showToast('Account created! 🎉', 'success');
-              // Wait for _profileReady before navigating so plan gate always sees plan data
-              if (_profileReadyResolve) {
-                // Profile not ready yet — navigate after it resolves
-                _profileReady.then(() => { navigate('#/home'); setTimeout(() => showPlansModalIfNeeded(), 500); });
-              } else {
+              // Only navigate if appInit() has already finished its boot route.
+              // If boot is still running, appInit() will handle routing itself.
+              if (_bootDone) {
                 navigate('#/home');
                 setTimeout(() => showPlansModalIfNeeded(), 500);
+              } else {
+                // appInit() is still running — it will route correctly on its own
+                _profileReady.then(() => {
+                  if (_bootDone) return; // appInit already routed
+                  navigate('#/home');
+                  setTimeout(() => showPlansModalIfNeeded(), 500);
+                });
               }
             }
           } else if (event === 'SIGNED_IN') {
-            // Wait for _profileReady before navigating so plan gate always sees plan data
-            if (_profileReadyResolve) {
-              _profileReady.then(() => { navigate('#/home'); setTimeout(() => showPlansModalIfNeeded(), 500); });
-            } else {
+            if (_bootDone) {
               navigate('#/home');
               setTimeout(() => showPlansModalIfNeeded(), 500);
+            } else {
+              _profileReady.then(() => {
+                if (_bootDone) return;
+                navigate('#/home');
+                setTimeout(() => showPlansModalIfNeeded(), 500);
+              });
             }
           }
 
@@ -3837,22 +3850,22 @@
             return;
           }
 
-          // Feature 5: Plan gate for group and alarm routes
+          // Feature 5: Plan gate for group and alarm routes.
+          // ONLY block if plan_type is explicitly set AND the plan is inactive.
+          // Never block when plan_type is null — that means profile hasn't loaded yet
+          // (e.g. first load, cleared storage) and we must let the user through.
           const PLAN_GATED = ['#/groups', '#/group-detail', '#/create-group', '#/join-group', '#/wake-dashboard'];
-          if (PLAN_GATED.includes(hash) && AppState.user && !isPlanActive()) {
-            console.warn('[Wakeit] PLAN GATE blocked route:', hash, '— isPlanActive()=false, planType=', getPlanType());
-            // Double-check: if planType is null, the profile might not have loaded yet.
-            // In that case, let the route through — initGroups has its own auth guard.
+          if (PLAN_GATED.includes(hash) && AppState.user) {
             const pt = getPlanType();
-            if (pt !== null) {
-              // Plan type IS set but expired/invalid — genuinely block
+            if (pt !== null && !isPlanActive()) {
+              // Plan type IS set but genuinely expired/invalid — block
+              console.warn('[Wakeit] PLAN GATE blocked route:', hash, '— plan expired, planType=', pt);
               showToast('Choose a plan to access Wakeit 🚀', 'info');
               setTimeout(() => openModal('modal-plans'), 400);
               navigate('#/home');
               return;
-            } else {
-              console.log('[Wakeit] Plan type is null (profile not loaded yet?) — allowing route through');
             }
+            // pt === null means profile is still loading — allow through
           }
 
           // If on landing while logged in, redirect to home
@@ -5033,16 +5046,10 @@
           AppHeader('groups-header', 'My Groups', false, null, false);
           BottomNav('groups-nav', 'groups');
 
-        // Auth guard: always call getSession() to ensure the Supabase client
-        // has a valid auth token attached before any DB query.
-        // This is critical: after a page reload the Supabase JS client restores
-        // the session from localStorage internally, but only AFTER getSession()
-        // is called — without this call, queries return 0 rows silently.
+        // Always explicitly get session to ensure Supabase client has auth token.
         const freshSession = await getSafeSession();
-        if (freshSession) {
-          AppState.user = freshSession.user;
-        }
-        let uid = getCurrentUserId();
+        if (freshSession) AppState.user = freshSession.user;
+        const uid = getCurrentUserId();
         if (!uid) {
           console.warn('[Wakeit] initGroups: no user — redirecting to login');
           navigate('#/login');
@@ -5055,20 +5062,23 @@
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>`;
 
-        const { data: memberships, error: memErr } = await db.from('group_members')
-          .select('group_id').eq('user_id', uid);
+        // Query 1: groups via membership table
+        const { data: memberships, error: memErr } = await db
+          .from('group_members').select('group_id').eq('user_id', uid);
+        if (memErr) console.warn('[Wakeit] initGroups memberships error:', memErr.message);
 
-        if (memErr) {
-          console.error('[Wakeit] initGroups memberships fetch error:', memErr.message);
-          if (list) list.innerHTML = `<div class="empty-state">
-          <div class="empty-icon">⚠️</div>
-          <div class="empty-title">Couldn't load groups</div>
-          <div class="empty-sub">Check your connection and pull to refresh.</div>
-        </div>`;
-          return;
-        }
+        // Query 2: groups created by this user (fallback — covers cases where
+        // the membership row is missing or RLS on group_members is too strict)
+        const { data: ownedGroups, error: ownedErr } = await db
+          .from('groups').select('*').eq('created_by', uid);
+        if (ownedErr) console.warn('[Wakeit] initGroups ownedGroups error:', ownedErr.message);
 
-        if (!memberships?.length) {
+        // Build a merged, deduplicated list of group IDs
+        const memberGroupIds = (memberships || []).map(m => m.group_id);
+        const ownedGroupIds  = (ownedGroups  || []).map(g => g.id);
+        const allIds = [...new Set([...memberGroupIds, ...ownedGroupIds])];
+
+        if (!allIds.length) {
           if (list) list.innerHTML = `<div class="empty-state">
           <div class="empty-icon">👥</div>
           <div class="empty-title">No groups yet</div>
@@ -5076,10 +5086,17 @@
         </div>`;
           return;
         }
-        const groupIds = memberships.map(m => m.group_id);
-        const { data: groups, error: grpErr } = await db.from('groups').select('*').in('id', groupIds);
-        if (grpErr) {
-          console.error('[Wakeit] initGroups groups fetch error:', grpErr.message);
+
+        // Fetch full group data for IDs not already loaded via ownedGroups
+        const missingIds = memberGroupIds.filter(id => !ownedGroupIds.includes(id));
+        let extraGroups = [];
+        if (missingIds.length) {
+          const { data: eg } = await db.from('groups').select('*').in('id', missingIds);
+          extraGroups = eg || [];
+        }
+        const groups = [...(ownedGroups || []), ...extraGroups];
+
+        if (!groups.length) {
           if (list) list.innerHTML = `<div class="empty-state">
           <div class="empty-icon">⚠️</div>
           <div class="empty-title">Couldn't load groups</div>
@@ -5087,7 +5104,8 @@
         </div>`;
           return;
         }
-        if (list) list.innerHTML = (groups || []).map(g => `
+
+        if (list) list.innerHTML = groups.map(g => `
         <div class="group-card" onclick="openGroupDetail('${g.id}')">
           <span class="group-emoji">${g.emoji || '⏰'}</span>
           <div class="group-info">
@@ -5098,6 +5116,7 @@
         </div>`).join('');
         } catch(err) {
           console.error('[Wakeit] initGroups() CRASHED:', err);
+          if (list) list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Something went wrong</div><div class="empty-sub">${err.message}</div></div>`;
         }
       }
 
@@ -7874,17 +7893,17 @@
             history.replaceState(null, '', '#/splash');
           }
           console.log('[Wakeit] appInit() routing to hash:', window.location.hash);
-          // Always route directly — guaranteed to run regardless of hashchange.
-          // NOTE: do NOT call initGroups() here — onRouteChange() → initScreen()
-          // already calls it, and AppState.user is guaranteed set at that point.
           await onRouteChange();
           console.log('[Wakeit] appInit() routing complete, current hash:', window.location.hash);
         } catch (e) {
           console.error('[Wakeit] appInit routing error:', e);
-          // Hide loader on error so user isn't stuck forever
           const loaderEl = document.getElementById('app-init-loader');
           if (loaderEl) loaderEl.style.display = 'none';
           showFallbackUI(e && e.message ? e.message : String(e));
+        } finally {
+          // Signal that boot is complete — onAuthStateChange SIGNED_IN
+          // navigation is now safe to proceed without racing appInit().
+          _bootDone = true;
         }
       }
 
