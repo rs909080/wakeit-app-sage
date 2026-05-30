@@ -7171,6 +7171,56 @@
         startVoiceRecording();
       }
 
+      async function uploadAudioFile(file) {
+        const MAX_SIZE_MB = 5;
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+          showToast('File too large. Max 5MB.', 'error');
+          return null;
+        }
+
+        const userId = getCurrentUserId();
+        if (!userId) return null;
+        const extension = file.name.split('.').pop() || 'mp3';
+        const fileName = `${userId}/${Date.now()}.${extension}`;
+
+        updateUploadProgress(10);
+
+        const uploadPromise = db.storage
+          .from('alarm-tones')
+          .upload(fileName, file, { upsert: true, contentType: file.type });
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Upload timed out')), 30000)
+        );
+
+        updateUploadProgress(50);
+
+        const { data, error } = await Promise.race([uploadPromise, timeoutPromise])
+          .catch(err => ({ data: null, error: err }));
+
+        if (error) {
+          updateUploadProgress(0);
+          showToast('Upload failed: ' + error.message, 'error');
+          return null;
+        }
+
+        updateUploadProgress(100);
+        const { data: urlData } = db.storage
+          .from('alarm-tones').getPublicUrl(fileName);
+        return urlData?.publicUrl || null;
+      }
+
+      function updateUploadProgress(percent) {
+        const wrap = document.getElementById('tone-upload-progress-wrap');
+        if (wrap) wrap.style.display = '';
+        const bar = document.getElementById('tone-upload-bar');
+        if (bar) bar.style.width = percent + '%';
+        const label = document.getElementById('tone-upload-label');
+        if (label) label.textContent = percent === 100
+          ? 'Upload complete ✅'
+          : `Uploading… ${percent}%`;
+      }
+
       /* Handle file selected for upload — uploads to Supabase Storage */
       async function handleFileSelected(input) {
         const file = input?.files?.[0];
@@ -7178,11 +7228,6 @@
 
         // Reset input so the same file can be re-selected
         input.value = '';
-
-        if (file.size > 10 * 1024 * 1024) {
-          showToast('File too large. Max 10MB.', 'error');
-          return;
-        }
 
         const uid = getCurrentUserId();
         if (!uid) { showToast('Please log in first', 'error'); return; }
@@ -7193,51 +7238,16 @@
         const recordRow = document.getElementById('tone-row-record');
         if (uploadRow) uploadRow.style.opacity = '0.5';
         if (recordRow) recordRow.style.opacity = '0.5';
-        setUploadProgress(true, 0, 'Preparing upload…');
 
-        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `${uid}/${Date.now()}_${cleanName}`;
+        // Call the newly optimized uploadAudioFile function
+        const publicUrl = await uploadAudioFile(file);
 
-        // Animated progress: 0→85% while uploading, then 85→100% only after server confirms
-        let fakeP = 0;
-        let phase = 'uploading'; // 'uploading' | 'saving'
-        const fakeInterval = setInterval(() => {
-          if (phase === 'uploading') {
-            fakeP = Math.min(fakeP + 12, 75);
-            setUploadProgress(true, fakeP, `Uploading… ${fakeP}%`);
-          } else {
-            fakeP = Math.min(fakeP + 5, 90);
-            setUploadProgress(true, fakeP, `Server saving… ${fakeP}%`);
-          }
-        }, 250);
-
-        let uploadError = null;
-        try {
-          const { error } = await db.storage.from('alarm-tones').upload(path, file, { upsert: false });
-          phase = 'saving'; // upload sent — now waiting for server confirmation
-          if (error) uploadError = error;
-        } catch (e) {
-          uploadError = e;
-        }
-
-        clearInterval(fakeInterval);
-
-        if (uploadError) {
-          // Show detailed error in the progress bar UI with a Retry button
-          const msg = uploadError.message || JSON.stringify(uploadError);
-          setUploadProgress(true, 100, `<span style="color:var(--danger)">Failed: ${msg}</span> <button onclick="document.getElementById('tone-file-input').click()" style="margin-left:8px; padding:2px 8px; border-radius:4px; background:var(--danger); color:#fff; border:none; cursor:pointer;">Retry</button>`);
+        if (!publicUrl) {
           toneUploading = false;
           if (uploadRow) uploadRow.style.opacity = '';
           if (recordRow) recordRow.style.opacity = '';
-          console.error('[Wakeit] Tone upload error:', uploadError);
           return;
         }
-
-        // Server confirmed — jump to 100%
-        setUploadProgress(true, 100, 'Upload complete! ');
-
-        const { data: urlData } = db.storage.from('alarm-tones').getPublicUrl(path);
-        const publicUrl = urlData?.publicUrl || '';
 
         const toneName = file.name.replace(/\.[^/.]+$/, '');
         AppState.selectedTone = { name: toneName, type: 'upload', url: publicUrl };
@@ -7259,10 +7269,11 @@
 
         // Re-enable after short display window
         setTimeout(() => {
-          setUploadProgress(false, 0, '');
           toneUploading = false;
           if (uploadRow) uploadRow.style.opacity = '';
           if (recordRow) recordRow.style.opacity = '';
+          const wrap = document.getElementById('tone-upload-progress-wrap');
+          if (wrap) wrap.style.display = 'none';
         }, 1500);
       }
 
@@ -7318,47 +7329,33 @@
             const blob = new Blob(recordChunks, { type: mimeType });
             if (blob.size < 100) { showToast('Recording too short. Try again.', 'error'); return; }
 
-            // Show upload progress
-            setUploadProgress(true, 0, 'Saving voice note…');
-            let fakeP = 0;
-            const fakeInterval = setInterval(() => {
-              fakeP = Math.min(fakeP + 20, 85);
-              setUploadProgress(true, fakeP, `Saving… ${fakeP}%`);
-            }, 250);
+            showToast('Uploading recording…', 'info');
 
-            if (uid) {
-              const ext = mimeType === 'audio/webm' ? 'webm' : 'ogg';
-              const path = `${uid}/voice_${Date.now()}.${ext}`;
-              const file = new File([blob], `voice_${Date.now()}.${ext}`, { type: mimeType });
-              const { error, data: uploadData } = await db.storage.from('alarm-tones').upload(path, file);
-              clearInterval(fakeInterval);
-              if (!error) {
-                const { data: { publicUrl } } = db.storage.from('alarm-tones').getPublicUrl(path);
-                AppState.selectedTone = { name: 'My Voice Note', type: 'voicenote', url: publicUrl };
-                await cacheTone(publicUrl);
-                setUploadProgress(true, 100, 'Voice note saved! ');
-                loadCustomTones();
-              } else {
-                clearInterval(fakeInterval);
-                setUploadProgress(true, 100, `<span style="color:var(--danger)">Upload failed</span> <button onclick="startVoiceRecording()" style="margin-left:8px; padding:2px 8px; border-radius:4px; background:var(--danger); color:#fff; border:none; cursor:pointer;">Retry</button>`);
-                // Fallback to local blob URL
-                AppState.selectedTone = { name: 'My Voice Note', type: 'voicenote', url: URL.createObjectURL(blob) };
-                loadCustomTones();
+            const file = new File([blob], `voice-${Date.now()}.${mimeType === 'audio/webm' ? 'webm' : 'ogg'}`, { type: mimeType });
+            const url = await uploadAudioFile(file);
+
+            if (url) {
+              AppState.selectedTone = { name: 'My Voice Note', type: 'voicenote', url };
+
+              // Persist to user's profile
+              if (uid) {
+                await db.from('profiles').update({ custom_tone_url: url, custom_tone_name: 'My Voice Note' }).eq('id', uid);
               }
-            } else {
-              clearInterval(fakeInterval);
-              setUploadProgress(false, 0, '');
-              AppState.selectedTone = { name: 'My Voice Note', type: 'voicenote', url: URL.createObjectURL(blob) };
+
+              await cacheTone(url);
+              showToast('Recording saved! ✅', 'success');
               loadCustomTones();
+            } else {
+              showToast('Upload failed', 'error');
             }
 
             // Update selected tone name
             document.querySelectorAll('[id^="tone-check-"]').forEach(el => el.style.opacity = '0');
             const nameEl = document.getElementById('selected-tone-name');
             if (nameEl) nameEl.textContent = 'My Voice Note ';
-            showToast('Voice note ready! ', 'success');
             setTimeout(() => setUploadProgress(false, 0, ''), 1500);
           };
+
 
           mediaRecorder.start(200); // 200ms chunks for reliability
         }).catch(() => {
