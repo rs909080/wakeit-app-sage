@@ -5991,29 +5991,12 @@
         const targetTime = new Date(alarm.alarm_time).getTime();
         const waitTime = targetTime - serverTimeNow;
 
-        const playActions = () => {
+        const playActions = async () => {
           console.log('[Wakeit] Triggering alarm ring output...');
-
-          // Try preloaded audio first (prepared by preloadAlarmAudio)
-          const preloaded = getPreloadedAudio(alarm.id);
           const audioUrl = alarm.tone_url || null;
 
-          if (preloaded) {
-            // Instant playback from preloaded buffer with volume ramp
-            preloaded.loop = true;
-            preloaded.volume = 0.3; // start low for ramp-up
-            preloaded.currentTime = 0;
-            AppState.alarmAudio = preloaded;
-            playWithRetry(preloaded); // retry up to 3 times
-            startVolumeRamp(); // 30% → 100% over 5s
-          } else if (audioUrl) {
-            // Fallback: load on-demand with retry
-            const audio = new Audio(audioUrl);
-            audio.loop = true;
-            audio.volume = 0.3; // start low for ramp-up
-            AppState.alarmAudio = audio;
-            playWithRetry(audio); // retry up to 3 times
-            startVolumeRamp(); // 30% → 100% over 5s
+          if (audioUrl) {
+            await playAlarmAudio(audioUrl);
           } else {
             // No custom tone — play the built-in Web Audio beep
             playDefaultBeep();
@@ -6208,12 +6191,7 @@
                   // Start sound + vibration (cold start didn't go through triggerAlarm)
                   stopAlarmAudio(); // ensure clean state
                   if (alarm.tone_url) {
-                    const audio = new Audio(alarm.tone_url);
-                    audio.loop = true;
-                    audio.volume = 0.3; // start low for ramp-up
-                    AppState.alarmAudio = audio;
-                    playWithRetry(audio); // retry up to 3 times
-                    startVolumeRamp(); // 30% → 100% over 5s
+                    await playAlarmAudio(alarm.tone_url);
                   } else {
                     playDefaultBeep();
                   }
@@ -6324,14 +6302,22 @@
        */
       function subscribeToMyWakeStatus(alarmId) {
         if (wakeChannel) wakeChannel.unsubscribe();
+        const uid = getCurrentUserId();
         wakeChannel = db.channel('my-wake-attempts-' + alarmId)
           .on('postgres_changes', {
-            event: 'INSERT', schema: 'public',
+            event: '*', schema: 'public',
             table: 'wake_attempts',
             filter: `alarm_id=eq.${alarmId}`
-          }, () => {
+          }, (payload) => {
             // Refresh attempt counts on the ringing screen
             loadRingingAttemptCounts(alarmId);
+
+            // If this is the current user and they became awake (SMS confirmation), turn off alarm
+            if (payload.new && payload.new.user_id === uid && payload.new.status === 'awake') {
+              stopAlarmAudio();
+              navigate('#/home');
+              showToast('Alarm dismissed via SMS! Good morning! ☀️', 'success');
+            }
           })
           .subscribe();
 
@@ -7623,9 +7609,45 @@
          UTILITY FUNCTIONS
       ================================================ */
 
+      let alarmAudioContext = null;
+      let alarmGainNode = null;
+      let alarmAudioSource = null;
+
+      async function playAlarmAudio(toneUrl) {
+        try {
+          alarmAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const response = await fetch(toneUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          const audioBuffer = await alarmAudioContext.decodeAudioData(arrayBuffer);
+
+          alarmGainNode = alarmAudioContext.createGain();
+          alarmGainNode.gain.value = 2.0; // 200% volume
+          alarmGainNode.connect(alarmAudioContext.destination);
+
+          alarmAudioSource = alarmAudioContext.createBufferSource();
+          alarmAudioSource.buffer = audioBuffer;
+          alarmAudioSource.loop = true;
+          alarmAudioSource.connect(alarmGainNode);
+          alarmAudioSource.start(0);
+        } catch (err) {
+          console.error('Audio play failed:', err);
+        }
+      }
+
       /* Stop alarm audio, beep loop, vibration and clean up */
       function stopAlarmAudio() {
-        // 1. Stop URL-based audio
+        // 1. Stop Web Audio API custom audio
+        if (alarmAudioSource) {
+          try { alarmAudioSource.stop(); } catch (e) {}
+          alarmAudioSource = null;
+        }
+        if (alarmAudioContext) {
+          try { alarmAudioContext.close(); } catch (e) {}
+          alarmAudioContext = null;
+        }
+        alarmGainNode = null;
+
+        // 2. Stop HTML5 Audio if any (fallback/stale references)
         if (AppState.alarmAudio) {
           try {
             AppState.alarmAudio.pause();
@@ -7633,24 +7655,24 @@
           } catch (e) { /* ignore */ }
           AppState.alarmAudio = null;
         }
-        // 2. Stop Web Audio beep interval
+        // 3. Stop Web Audio beep interval
         if (AppState.alarmBeepInterval) {
           clearInterval(AppState.alarmBeepInterval);
           AppState.alarmBeepInterval = null;
         }
-        // 3. Stop vibration
+        // 4. Stop vibration
         if (AppState.alarmVibrateInterval) {
           clearInterval(AppState.alarmVibrateInterval);
           AppState.alarmVibrateInterval = null;
         }
         if (navigator.vibrate) navigator.vibrate(0); // cancel any ongoing vibration
-        // 4. Stop volume ramp
+        // 5. Stop volume ramp
         if (AppState._volumeRampInterval) {
           clearInterval(AppState._volumeRampInterval);
           AppState._volumeRampInterval = null;
         }
 
-        // 4. Unsubscribe realtime wake channel
+        // 6. Unsubscribe realtime wake channel
         if (wakeChannel) {
           wakeChannel.unsubscribe();
           wakeChannel = null;
@@ -7798,7 +7820,7 @@
       /* Stop alarm audio whenever user navigates away from alarm-ringing */
       window.addEventListener('hashchange', () => {
         const fromAlarm = !window.location.hash.includes('alarm-ringing');
-        if (fromAlarm && AppState.alarmAudio) {
+        if (fromAlarm) {
           stopAlarmAudio();
         }
       });
