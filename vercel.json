@@ -52,7 +52,7 @@
       "headers": [
         {
           "key": "Service-Worker-Allowed",
-          "value": "/push/onesignal/"
+          "value": "/"
         },
         {
           "key": "Cache-Control",
