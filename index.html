@@ -52,19 +52,11 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBg_p3NDt_sg8Iuf3Cv3eQ5zpCWlA1sGWM",
-      authDomain: "wakeit-44bf3.firebaseapp.com",
-      projectId: "wakeit-44bf3",
-      storageBucket: "wakeit-44bf3.firebasestorage.app",
-      messagingSenderId: "346045783486",
-      appId: "1:346045783486:web:d94c87cc4a5aa81b97edef"
-    };
-
     window.firebaseApp = null;
     window.firebaseMessaging = null;
 
     try {
+      const firebaseConfig = await fetch('/api/config').then(r => r.json());
       window.firebaseApp = initializeApp(firebaseConfig);
       window.firebaseMessaging = getMessaging(window.firebaseApp);
 
@@ -3658,7 +3650,7 @@
       ================================================ */
       const IS_LOCALHOST = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
       const PREVIEW_PARAM = new URLSearchParams(window.location.search).get('preview') === '1';
-      const DEV_PREVIEW = IS_LOCALHOST || PREVIEW_PARAM;
+      const DEV_PREVIEW = IS_LOCALHOST && PREVIEW_PARAM;
 
       if (DEV_PREVIEW) {
         // Inject a mock user so all auth-gated screens work
