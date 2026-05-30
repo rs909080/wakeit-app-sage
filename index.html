@@ -3734,12 +3734,23 @@
 
             if (event === 'SIGNED_IN') {
               showToast('Account created! 🎉', 'success');
+              // Wait for _profileReady before navigating so plan gate always sees plan data
+              if (_profileReadyResolve) {
+                // Profile not ready yet — navigate after it resolves
+                _profileReady.then(() => { navigate('#/home'); setTimeout(() => showPlansModalIfNeeded(), 500); });
+              } else {
+                navigate('#/home');
+                setTimeout(() => showPlansModalIfNeeded(), 500);
+              }
+            }
+          } else if (event === 'SIGNED_IN') {
+            // Wait for _profileReady before navigating so plan gate always sees plan data
+            if (_profileReadyResolve) {
+              _profileReady.then(() => { navigate('#/home'); setTimeout(() => showPlansModalIfNeeded(), 500); });
+            } else {
               navigate('#/home');
               setTimeout(() => showPlansModalIfNeeded(), 500);
             }
-          } else if (event === 'SIGNED_IN') {
-            navigate('#/home');
-            setTimeout(() => showPlansModalIfNeeded(), 500);
           }
 
           AppState.profile = prof;
@@ -5022,17 +5033,16 @@
           AppHeader('groups-header', 'My Groups', false, null, false);
           BottomNav('groups-nav', 'groups');
 
-        // Auth guard: ensure session is confirmed before fetching.
-        // On page refresh, AppState.user may not be set yet if onAuthStateChange
-        // hasn't fired. Fall back to getSafeSession() to guarantee auth.
-        let uid = getCurrentUserId();
-        if (!uid) {
-          const session = await getSafeSession();
-          if (session) {
-            AppState.user = session.user;
-            uid = session.user.id;
-          }
+        // Auth guard: always call getSession() to ensure the Supabase client
+        // has a valid auth token attached before any DB query.
+        // This is critical: after a page reload the Supabase JS client restores
+        // the session from localStorage internally, but only AFTER getSession()
+        // is called — without this call, queries return 0 rows silently.
+        const freshSession = await getSafeSession();
+        if (freshSession) {
+          AppState.user = freshSession.user;
         }
+        let uid = getCurrentUserId();
         if (!uid) {
           console.warn('[Wakeit] initGroups: no user — redirecting to login');
           navigate('#/login');
@@ -7910,11 +7920,22 @@
             })
             .catch((err) => console.warn('[Wakeit] SW registration failed:', err));
 
-          // Auto-reload when a new service worker takes control
+          // Auto-reload when a new service worker takes control.
+          // Guard: only reload if appInit has already completed (app is live).
+          // Reloading during boot causes the splash freeze.
+          let _appReady = false;
           navigator.serviceWorker.addEventListener('controllerchange', () => {
             console.log('[Wakeit] New SW controller detected — reloading…');
-            window.location.reload();
+            if (_appReady) {
+              window.location.reload();
+            } else {
+              // Boot is still in progress — set a flag so the next navigation reloads
+              console.log('[Wakeit] controllerchange during boot — deferring reload');
+              setTimeout(() => { if (_appReady) window.location.reload(); }, 2000);
+            }
           });
+          // Mark app as ready after init completes
+          setTimeout(() => { _appReady = true; }, 5000);
         });
       }
 
