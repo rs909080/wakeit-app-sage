@@ -46,6 +46,8 @@
   </script>
   <!-- Supabase Auth (Stage 3) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- Lucide Icons (Stage 11 — approved overhaul) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Razorpay Payment (Stage 5) - defer to load sequentially -->
   <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
   <!-- Firebase Cloud Messaging (Stage 8) -->
@@ -172,6 +174,66 @@
       --radius-md: 20px;
       --radius-lg: 28px;
       --radius-full: 999px;
+    }
+
+    /* WAKEIT APPROVED PREMIUM ICONOGRAPHY SYSTEM (Lucide) */
+    .lucide-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      width: 18px;
+      height: 18px;
+      color: inherit;
+      fill: none;
+      stroke: currentColor;
+    }
+    .lucide-icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+    .lucide-icon-lg {
+      width: 20px;
+      height: 20px;
+    }
+    .icon-prefix {
+      margin-right: 8px !important; /* strict 8px prefix spacing */
+    }
+    .icon-suffix {
+      margin-left: 8px !important;
+    }
+    .bottom-nav .lucide-icon {
+      width: 20px;
+      height: 20px;
+      stroke: var(--text-secondary);
+      transition: stroke 0.15s ease;
+    }
+    .bottom-nav .nav-item.active .lucide-icon {
+      stroke: var(--primary);
+    }
+    /* Input icon overlay */
+    .input-icon-wrap {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .input-icon-wrap .input-field {
+      padding-left: 40px;
+    }
+    .input-icon-wrap .input-icon {
+      position: absolute;
+      left: 12px;
+      bottom: 14px;
+      color: var(--text-secondary);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+    /* Toast icon */
+    .toast-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     /* ================================================
@@ -2794,27 +2856,32 @@
 
       <!-- Sign Up Form -->
       <div id="form-signup" class="auth-form">
-        <div class="input-wrap">
+        <div class="input-wrap input-icon-wrap">
           <span class="input-label">Full Name</span>
+          <span class="input-icon"><i data-lucide="user" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="text" class="input-field" id="signup-name" placeholder="Sumit Sharma" />
         </div>
-        <div class="input-wrap">
+        <div class="input-wrap input-icon-wrap">
           <span class="input-label">Phone Number</span>
+          <span class="input-icon"><i data-lucide="phone" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="tel" class="input-field" id="signup-phone" placeholder="+91 9876543210" />
         </div>
-        <div class="input-wrap">
+        <div class="input-wrap input-icon-wrap">
           <span class="input-label">Email</span>
+          <span class="input-icon"><i data-lucide="mail" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="email" class="input-field" id="signup-email" placeholder="you@email.com" />
         </div>
-        <div class="input-wrap">
+        <div class="input-wrap input-icon-wrap">
           <span class="input-label">Password</span>
+          <span class="input-icon"><i data-lucide="lock" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="password" class="input-field" id="signup-password" placeholder="••••••••" />
         </div>
-        <div class="input-wrap">
+        <div class="input-wrap input-icon-wrap">
           <span class="input-label">Confirm Password</span>
+          <span class="input-icon"><i data-lucide="lock" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="password" class="input-field" id="signup-confirm" placeholder="••••••••" />
         </div>
-        <button id="btn-create-account" class="btn-gradient">Create Account</button>
+        <button id="btn-create-account" class="btn-gradient"><i data-lucide="user-plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Account</button>
         <div class="divider">or continue with</div>
         <button class="btn-google">
           <svg width="20" height="20" viewBox="0 0 48 48">
@@ -2833,17 +2900,19 @@
 
       <!-- Log In Form -->
       <div id="form-login" class="auth-form" style="display:none;">
-        <div class="input-wrap">
+        <div class="input-wrap input-icon-wrap">
           <span class="input-label">Email</span>
+          <span class="input-icon"><i data-lucide="mail" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="email" class="input-field" id="login-email" placeholder="you@email.com" />
         </div>
-        <div class="input-wrap">
+        <div class="input-wrap input-icon-wrap">
           <span class="input-label">Password</span>
+          <span class="input-icon"><i data-lucide="lock" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="password" class="input-field" id="login-password" placeholder="••••••••" />
           <span class="forgot-link">Forgot Password?</span>
         </div>
         <div id="login-error" style="display:none; color:var(--danger); margin-bottom:12px; font-size:14px;"></div>
-        <button id="btn-login" class="btn-gradient">Log In</button>
+        <button id="btn-login" class="btn-gradient"><i data-lucide="log-in" class="lucide-icon lucide-icon-sm icon-prefix"></i>Log In</button>
         <div class="divider">or continue with</div>
         <button class="btn-google">
           <svg width="20" height="20" viewBox="0 0 48 48">
@@ -2943,17 +3012,17 @@
 
             <div class="card" style="padding:0; overflow:hidden; margin-bottom: var(--space-4);">
               <div class="option-row" onclick="openGroupModal()">
-                <span class="option-label">Alarm for</span>
-                <span class="option-value">Morning Squad <span class="chevron">›</span></span>
+                <span class="option-label"><i data-lucide="users" class="lucide-icon icon-prefix"></i>Alarm for</span>
+                <span class="option-value">Morning Squad <span class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></span>
               </div>
               <div class="option-row" onclick="navigate('#/tone-picker')">
-                <span class="option-label">Tone</span>
+                <span class="option-label"><i data-lucide="music" class="lucide-icon icon-prefix"></i>Tone</span>
                 <span class="option-value" id="alarm-tone-label">Default — Classic Beep <span
-                    class="chevron">›</span></span>
+                    class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></span>
               </div>
               <div class="option-row">
                 <div>
-                  <span class="option-label">Vibration</span>
+                  <span class="option-label"><i data-lucide="vibrate" class="lucide-icon icon-prefix"></i>Vibration</span>
                   <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Vibrate when alarm rings
                   </div>
                 </div>
@@ -2964,8 +3033,8 @@
               </div>
 
               <div class="option-row" onclick="openRepeatModal()">
-                <span class="option-label">Repeat</span>
-                <span class="option-value">Once <span class="chevron">›</span></span>
+                <span class="option-label"><i data-lucide="calendar" class="lucide-icon icon-prefix"></i>Repeat</span>
+                <span class="option-value">Once <span class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></span>
               </div>
             </div>
 
@@ -2995,32 +3064,32 @@
             <div class="card" style="padding:0; overflow:hidden; margin-bottom: var(--space-4);">
               <!-- Each row: clicking icon/name selects, clicking ▶ previews -->
               <div class="tone-row">
-                <span class="tone-icon"></span>
+                <span class="tone-icon" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="music" class="lucide-icon lucide-icon-sm" style="color:var(--text-secondary);"></i></span>
                 <span class="tone-name" onclick="selectTone('beep')">Classic Beep</span>
                 <button class="tone-play" id="tone-play-beep" onclick="previewTone('beep')"
-                  aria-label="Preview Classic Beep">▶</button>
-                <span class="tone-check" id="tone-check-beep">✓</span>
+                  aria-label="Preview Classic Beep"><i data-lucide="play" class="lucide-icon lucide-icon-sm"></i></button>
+                <span class="tone-check" id="tone-check-beep"><i data-lucide="check" class="lucide-icon lucide-icon-sm" style="color:var(--primary);"></i></span>
               </div>
               <div class="tone-row">
-                <span class="tone-icon"></span>
+                <span class="tone-icon" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="music" class="lucide-icon lucide-icon-sm" style="color:var(--text-secondary);"></i></span>
                 <span class="tone-name" onclick="selectTone('birds')">Morning Birds</span>
                 <button class="tone-play" id="tone-play-birds" onclick="previewTone('birds')"
-                  aria-label="Preview Morning Birds">▶</button>
-                <span class="tone-check" id="tone-check-birds" style="opacity:0">✓</span>
+                  aria-label="Preview Morning Birds"><i data-lucide="play" class="lucide-icon lucide-icon-sm"></i></button>
+                <span class="tone-check" id="tone-check-birds" style="opacity:0"><i data-lucide="check" class="lucide-icon lucide-icon-sm" style="color:var(--primary);"></i></span>
               </div>
               <div class="tone-row">
-                <span class="tone-icon"></span>
+                <span class="tone-icon" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="music" class="lucide-icon lucide-icon-sm" style="color:var(--text-secondary);"></i></span>
                 <span class="tone-name" onclick="selectTone('rise')">Gentle Rise</span>
                 <button class="tone-play" id="tone-play-rise" onclick="previewTone('rise')"
-                  aria-label="Preview Gentle Rise">▶</button>
-                <span class="tone-check" id="tone-check-rise" style="opacity:0">✓</span>
+                  aria-label="Preview Gentle Rise"><i data-lucide="play" class="lucide-icon lucide-icon-sm"></i></button>
+                <span class="tone-check" id="tone-check-rise" style="opacity:0"><i data-lucide="check" class="lucide-icon lucide-icon-sm" style="color:var(--primary);"></i></span>
               </div>
               <div class="tone-row">
-                <span class="tone-icon"></span>
+                <span class="tone-icon" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="music" class="lucide-icon lucide-icon-sm" style="color:var(--text-secondary);"></i></span>
                 <span class="tone-name" onclick="selectTone('buzz')">Digital Buzz</span>
                 <button class="tone-play" id="tone-play-buzz" onclick="previewTone('buzz')"
-                  aria-label="Preview Digital Buzz">▶</button>
-                <span class="tone-check" id="tone-check-buzz" style="opacity:0">✓</span>
+                  aria-label="Preview Digital Buzz"><i data-lucide="play" class="lucide-icon lucide-icon-sm"></i></button>
+                <span class="tone-check" id="tone-check-buzz" style="opacity:0"><i data-lucide="check" class="lucide-icon lucide-icon-sm" style="color:var(--primary);"></i></span>
               </div>
             </div>
 
@@ -3029,7 +3098,7 @@
               <!-- Action buttons always at the top -->
               <div class="tone-row" id="tone-row-upload" onclick="handleUploadTone()"
                 style="cursor:pointer; border-bottom: 1px solid var(--border);">
-                <span class="tone-icon"></span>
+                <span class="tone-icon" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="upload-cloud" class="lucide-icon lucide-icon-sm" style="color:var(--primary);"></i></span>
                 <span class="tone-name" style="font-weight:700; color:var(--primary);">Upload Audio File</span>
                 <span class="pro-tag">Pro</span>
                 <input type="file" id="tone-file-input" accept=".mp3,.m4a,.wav,.ogg,.webm" style="display:none;"
@@ -3037,9 +3106,8 @@
               </div>
               <div class="tone-row" id="tone-row-record" onclick="handleRecordTone()"
                 style="cursor:pointer; border-bottom: 1px solid var(--border);">
-                <span class="tone-icon"></span>
-                <span class="tone-name" id="record-label" style="font-weight:700; color:var(--primary);">Record Voice
-                  (30s max)</span>
+                <span class="tone-icon" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="mic" class="lucide-icon lucide-icon-sm" style="color:var(--primary);"></i></span>
+                <span class="tone-name" id="record-label" style="font-weight:700; color:var(--primary);">Record Voice (30s max)</span>
                 <span class="pro-tag">Pro</span>
               </div>
 
@@ -3064,8 +3132,7 @@
                     style="font-size:var(--text-sm); font-weight:700; color:var(--text-primary); flex:1;">Recording… 30s
                     left</span>
                   <button id="btn-stop-recording" onclick="stopVoiceRecording()"
-                    style="padding:6px 14px; border-radius:var(--radius-full); background:var(--danger); color:#fff; border:none; font-size:12px; font-weight:700; cursor:pointer;">■
-                    Stop</button>
+                    style="padding:6px 14px; border-radius:var(--radius-full); background:var(--danger); color:#fff; border:none; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center;"><i data-lucide="square" class="lucide-icon lucide-icon-sm icon-prefix"></i>Stop</button>
                 </div>
                 <div style="height:4px; background:var(--border); border-radius:99px; overflow:hidden;">
                   <div id="record-progress-bar"
@@ -3100,8 +3167,8 @@
 
             <div style="height: var(--space-5);"></div>
             <div class="groups-btns">
-              <button class="btn-outline" onclick="navigate('#/join-group')">Join a Group</button>
-              <button class="btn-gradient" onclick="navigate('#/create-group')">Create Group</button>
+              <button class="btn-outline" onclick="navigate('#/join-group')"><i data-lucide="key-round" class="lucide-icon lucide-icon-sm icon-prefix"></i>Join a Group</button>
+              <button class="btn-gradient" onclick="navigate('#/create-group')"><i data-lucide="plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Group</button>
             </div>
           </div>
           <nav class="bottom-nav" id="groups-nav"></nav>
@@ -3138,28 +3205,27 @@
             </div>
 
             <div id="members-plan-card" class="card"
-              style="margin-bottom: var(--space-5); border-left: 3px solid var(--primary);">
-              <div id="members-plan-text" style="font-size: var(--text-sm); color: var(--text-secondary);"></div>
+              style="margin-bottom: var(--space-5); border-left: 3px solid var(--primary); display: flex; align-items: flex-start; gap: 8px;">
+              <i data-lucide="sparkles" class="lucide-icon lucide-icon-sm" style="color:var(--primary); margin-top:2px;"></i>
+              <div id="members-plan-text" style="font-size: var(--text-sm); color: var(--text-secondary); flex: 1;"></div>
             </div>
 
             <div id="create-group-error" style="display:none; color:var(--danger); margin-bottom:12px; font-size:14px;">
             </div>
-            <button id="btn-create-group" class="btn-gradient" onclick="doCreateGroup()">Create Group</button>
+            <button id="btn-create-group" class="btn-gradient" onclick="doCreateGroup()"><i data-lucide="plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Group</button>
           </div>
 
           <!-- Group Success State -->
           <div id="group-success-state" class="page-content" style="display:none; text-align:center;">
-            <div style="font-size: 64px; margin-bottom: var(--space-3);"></div>
+            <div style="margin-bottom: var(--space-3);"><i data-lucide="party-popper" class="lucide-icon" style="width: 64px; height: 64px; color: var(--primary);"></i></div>
             <div class="group-success-title">Group created!</div>
-            <div style="font-size: var(--text-sm); color:var(--text-secondary); margin-bottom: var(--space-4);">Share
-              this
-              code with your group</div>
+            <div style="font-size: var(--text-sm); color:var(--text-secondary); margin-bottom: var(--space-4);">Share this code with your group</div>
             <div id="success-invite-code" class="invite-code-display">···</div>
             <div class="invite-code-sub">6-digit invite code</div>
 
             <div style="display:flex; gap:var(--space-3);">
-              <button class="btn-outline" onclick="shareGroupCode()">Share Code</button>
-              <button class="btn-gradient" onclick="navigate('#/group-detail')">Go to Group →</button>
+              <button class="btn-outline" onclick="shareGroupCode()"><i data-lucide="share-2" class="lucide-icon lucide-icon-sm icon-prefix"></i>Share Code</button>
+              <button class="btn-gradient" onclick="navigate('#/group-detail')">Go to Group <i data-lucide="arrow-right" class="lucide-icon lucide-icon-sm icon-suffix"></i></button>
             </div>
           </div>
         </div>
@@ -3180,7 +3246,7 @@
               <div class="info-row">
                 <span class="info-row-label">Invite Code</span>
                 <span class="info-row-value"><span id="detail-invite-code">···</span> <span class="copy-icon"
-                    onclick="copyToClipboard(document.getElementById('detail-invite-code').textContent); showToast('Invite code copied!', 'success')"></span></span>
+                    onclick="copyToClipboard(document.getElementById('detail-invite-code').textContent); showToast('Invite code copied!', 'success')"><i data-lucide="copy" class="lucide-icon lucide-icon-sm" style="color:var(--primary); cursor:pointer; margin-left:6px;"></i></span></span>
               </div>
             </div>
 
@@ -3192,7 +3258,7 @@
 
             <!-- Live Wake Status (shown when an alarm session is active) -->
             <div id="live-status-section" style="display:none; margin-bottom:var(--space-4);">
-              <div class="section-title">Live Wake Status </div>
+              <div class="section-title"><i data-lucide="activity" class="lucide-icon icon-prefix" style="color:#30D158;"></i>Live Wake Status</div>
               <div class="card" style="padding:0; overflow:hidden;" id="live-status-list">
                 <!-- Rendered by JS -->
               </div>
@@ -3211,8 +3277,8 @@
             <div id="alarm-history-section" style="margin-bottom:var(--space-4);">
               <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;"
                 onclick="toggleAlarmHistory()">
-                <div class="section-title" style="margin-bottom:0;"> Past Alarms</div>
-                <span id="history-toggle-icon" style="font-size:14px; color:var(--text-secondary); transition:transform 0.2s;">▼</span>
+                <div class="section-title" style="margin-bottom:0;"><i data-lucide="history" class="lucide-icon icon-prefix"></i>Past Alarms</div>
+                <span id="history-toggle-icon" style="color:var(--text-secondary); transition:transform 0.2s; display:inline-flex; align-items:center;"><i data-lucide="chevron-down" class="lucide-icon lucide-icon-sm"></i></span>
               </div>
               <div id="alarm-history-list" style="display:none; margin-top:var(--space-3);">
                 <!-- Rendered by JS -->
@@ -3221,7 +3287,7 @@
 
             <!-- Admin only: Wake Dashboard -->
             <button id="detail-wake-btn" class="btn-gradient" style="margin-bottom:var(--space-3);"
-              onclick="navigate('#/wake-dashboard')">👁 View Wake Dashboard</button>
+              onclick="navigate('#/wake-dashboard')"><i data-lucide="layout-dashboard" class="lucide-icon lucide-icon-sm icon-prefix"></i>View Wake Dashboard</button>
             <!-- Admin only: Set Alarm -->
             <button id="detail-set-alarm-btn" class="btn-gradient" onclick="navigate('#/create-alarm')"
               style="margin-bottom:var(--space-5);">Set Alarm for This Group</button>
@@ -3288,11 +3354,11 @@
             <div class="settings-section-header">Preferences</div>
             <div class="card" style="padding:0; overflow:hidden; margin-bottom:var(--space-4);">
               <div class="option-row">
-                <span class="option-label">Notifications</span>
+                <span class="option-label"><i data-lucide="bell" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--primary);"></i>Notifications</span>
                 <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
               </div>
               <div class="option-row">
-                <span class="option-label">Theme</span>
+                <span class="option-label"><i data-lucide="sun" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--primary);"></i>Theme</span>
                 <span class="option-value">Auto (Day/Night)</span>
               </div>
             </div>
@@ -3300,23 +3366,23 @@
             <!-- About -->
             <div class="settings-section-header">About</div>
             <div class="card" style="padding:0; overflow:hidden; margin-bottom:var(--space-5);">
-              <div class="option-row"><span class="option-label">App Version</span><span
+              <div class="option-row"><span class="option-label"><i data-lucide="info" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--text-secondary);"></i>App Version</span><span
                   class="option-value">v3.1.0</span>
               </div>
-              <div class="option-row" style="cursor:pointer;"><span class="option-label">Privacy Policy</span><span
-                  class="option-value">›</span></div>
-              <div class="option-row" style="cursor:pointer;"><span class="option-label">Terms of Service</span><span
-                  class="option-value">›</span></div>
+              <div class="option-row" style="cursor:pointer;"><span class="option-label"><i data-lucide="shield" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--text-secondary);"></i>Privacy Policy</span><span
+                  class="option-value"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></div>
+              <div class="option-row" style="cursor:pointer;"><span class="option-label"><i data-lucide="scroll-text" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--text-secondary);"></i>Terms of Service</span><span
+                  class="option-value"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></div>
               <div class="option-row" style="cursor:pointer;" onclick="showToast('Thanks for the love! ', 'success')">
-                <span class="option-label">Rate Wakeit </span><span class="option-value">›</span>
+                <span class="option-label"><i data-lucide="star" class="lucide-icon lucide-icon-sm icon-prefix" style="color:#FFD60A;"></i>Rate Wakeit </span><span class="option-value"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span>
               </div>
             </div>
 
             <button id="btn-sign-out" class="btn-outline"
-              style="color:var(--danger); border-color:var(--danger); margin-bottom:var(--space-3);">Log Out</button>
+              style="color:var(--danger); border-color:var(--danger); margin-bottom:var(--space-3);"><i data-lucide="log-out" class="lucide-icon lucide-icon-sm icon-prefix"></i>Log Out</button>
             <div
               style="color:var(--danger); font-size:var(--text-sm); text-align:center; cursor:pointer; padding:8px; font-weight:600;">
-              Delete Account</div>
+              <i data-lucide="trash-2" class="lucide-icon lucide-icon-sm icon-prefix"></i>Delete Account</div>
           </div>
           <nav class="bottom-nav" id="settings-nav"></nav>
         </div>
@@ -3334,21 +3400,21 @@
             style="width:360px;height:360px;top:calc(50% - 290px);left:calc(50% - 180px);animation-delay:1.2s;"></div>
 
           <div style="display:flex; flex-direction:column; align-items:center; padding-top:60px; width:100%;">
-            <div class="alarm-bell"></div>
+            <div class="alarm-bell" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="bell" class="lucide-icon" style="width:36px; height:36px; color:#fff;"></i></div>
             <div class="alarm-time-display" id="ringing-time">07:30 AM</div>
             <div class="alarm-group-label" id="ringing-group-label">Ringing for: Your Group</div>
           </div>
 
           <!-- Wake Status Buttons -->
-          <div class="wake-status-title">Are you awake? </div>
+          <div class="wake-status-title">Are you awake?</div>
           <div class="wake-status-btns">
             <button class="wake-btn wake-btn-awake" id="btn-i-am-awake" onclick="recordWakeAttempt('awake')">
-              <span class="wake-btn-icon"></span>
+              <span class="wake-btn-icon" style="display:flex; align-items:center; justify-content:center; height:36px;"><i data-lucide="sun" class="lucide-icon" style="width:28px; height:28px;"></i></span>
               <span class="wake-btn-label">I'm Awake</span>
               <span class="wake-attempt-count" id="wake-awake-count"></span>
             </button>
             <button class="wake-btn wake-btn-sleeping" id="btn-still-sleeping" onclick="recordWakeAttempt('sleeping')">
-              <span class="wake-btn-icon"></span>
+              <span class="wake-btn-icon" style="display:flex; align-items:center; justify-content:center; height:36px;"><i data-lucide="moon" class="lucide-icon" style="width:28px; height:28px;"></i></span>
               <span class="wake-btn-label">Still Sleeping</span>
               <span class="wake-attempt-count" id="wake-sleeping-count"></span>
             </button>
@@ -3546,7 +3612,7 @@
       ================================================ */
       function openModal(id) {
         const el = document.getElementById(id);
-        if (el) el.classList.add('open');
+        if (el) { el.classList.add('open'); window.refreshIcons && window.refreshIcons(); }
       }
 
       function closeModal(id) {
@@ -3849,6 +3915,17 @@
         window.location.hash = hash;
       }
 
+      window.refreshIcons = function() {
+        if (window.lucide) {
+          window.lucide.createIcons({
+            attrs: {
+              'stroke-width': 1.75,
+              'class': 'lucide-icon'
+            }
+          });
+        }
+      };
+
       async function onRouteChange() {
         // Remove any previously shown fallback UI so a successful route renders normally
         const existingFallback = document.getElementById('wakeit-fallback');
@@ -3949,9 +4026,9 @@
             const sidebarTabs = ['#/home', '#/groups', '#/settings'];
             if (mobileNav && sidebarTabs.includes(hash)) {
               const tabs = [
-                { label: 'Alarms', icon: '\u23F0', hash: '#/home' },
-                { label: 'Groups', icon: '\uD83D\uDC65', hash: '#/groups' },
-                { label: 'Settings', icon: '\u2699\uFE0F', hash: '#/settings' },
+                { label: 'Alarms', icon: '<i data-lucide="clock" class="lucide-icon lucide-icon-lg"></i>', hash: '#/home' },
+                { label: 'Groups', icon: '<i data-lucide="users" class="lucide-icon lucide-icon-lg"></i>', hash: '#/groups' },
+                { label: 'Settings', icon: '<i data-lucide="settings" class="lucide-icon lucide-icon-lg"></i>', hash: '#/settings' },
               ];
               mobileNav.innerHTML = tabs.map(t =>
                 `<div class="nav-item ${t.hash === hash ? 'active' : ''}" onclick="navigate('${t.hash}')">
@@ -3967,6 +4044,7 @@
           console.log('[Wakeit] onRouteChange calling initScreen for:', hash);
           await initScreen(hash);
           applyTheme();
+          window.refreshIcons();
 
           // Hide the boot loader — content is now visible
           const loader = document.getElementById('app-init-loader');
@@ -3993,12 +4071,12 @@
         el.innerHTML = `
         <div class="app-header">
           ${showBack
-            ? `<button class="header-back" onclick="navigate('${backHash || '#/home'}') " aria-label="Back">←</button>`
+            ? `<button class="header-back" onclick="navigate('${backHash || '#/home'}') " aria-label="Back"><i data-lucide="chevron-left" class="lucide-icon lucide-icon-lg"></i></button>`
             : `<div style="width:40px;"></div>`}
           <span class="header-title">${title}</span>
           <div class="header-actions">
             ${showSettings
-            ? `<button class="header-icon-btn" onclick="navigate('#/settings')" aria-label="Settings">⚙️</button>`
+            ? `<button class="header-icon-btn" onclick="navigate('#/settings')" aria-label="Settings"><i data-lucide="settings" class="lucide-icon lucide-icon-lg"></i></button>`
             : `<div style="width:40px;"></div>`}
           </div>
         </div>`;
@@ -4011,30 +4089,32 @@
         const name = AppState.profile?.name || AppState.profile?.full_name || AppState.user?.email?.split('@')[0] || 'User';
         const initials = name.trim().split(/\s+/).map(n => n[0] || '').join('').toUpperCase().slice(0, 2) || 'U';
         const items = [
-          { icon: '', label: 'Alarms', hash: '#/home' },
-          { icon: '', label: 'Groups', hash: '#/groups' },
-          { icon: '⚙️', label: 'Settings', hash: '#/settings' },
+          { icon: '<i data-lucide="clock" class="lucide-icon icon-prefix"></i>', label: 'Alarms', hash: '#/home' },
+          { icon: '<i data-lucide="users" class="lucide-icon icon-prefix"></i>', label: 'Groups', hash: '#/groups' },
+          { icon: '<i data-lucide="settings" class="lucide-icon icon-prefix"></i>', label: 'Settings', hash: '#/settings' },
         ];
 
-        let planStatusStr = " Upgrade Plan";
+        let planStatusStr = "Upgrade Plan";
         let planBtnTitle = "View pricing plans";
         let planBtnClass = "sidebar-upgrade-btn";
         const planType = localStorage.getItem('wakeit_plan_type');
         const planStart = parseInt(localStorage.getItem('wakeit_plan_start') || '0', 10);
 
         if (planType === 'member' || planType === 'admin' || planType === 'organisation') {
-          const planLabels = { member: ' Member', admin: ' Admin', organisation: ' Organisation' };
+          const planLabels = { member: 'Member', admin: 'Admin', organisation: 'Organisation' };
           planStatusStr = `${planLabels[planType]} Plan`;
           planBtnTitle = "Manage your plan";
           planBtnClass = "sidebar-upgrade-btn sidebar-plan-active";
         } else if (planType === 'free_trial') {
           const daysLeft = Math.max(0, 3 - Math.floor((Date.now() - planStart) / (1000 * 60 * 60 * 24)));
-          planStatusStr = daysLeft > 0 ? ` Trial: ${daysLeft}d left` : ' Upgrade Plan';
+          planStatusStr = daysLeft > 0 ? `Trial: ${daysLeft}d left` : 'Upgrade Plan';
           planBtnTitle = daysLeft > 0 ? "Upgrade your plan" : "Your trial has expired";
         }
 
+        const planIcon = `<i data-lucide="zap" class="lucide-icon lucide-icon-sm icon-prefix"></i>`;
+
         return `<aside class="app-sidebar" id="app-sidebar">
-        <div class="sidebar-logo">Wakeit </div>
+        <div class="sidebar-logo">Wakeit</div>
         <nav class="sidebar-nav">
           ${items.map(item => `
             <div class="sidebar-nav-item ${activeHash === item.hash ? 'active' : ''}"
@@ -4045,7 +4125,7 @@
           `).join('')}
         </nav>
         <div class="${planBtnClass}" onclick="openModal('modal-plans')" title="${planBtnTitle}">
-          <span>${planStatusStr}</span>
+          <span>${planIcon}${planStatusStr}</span>
         </div>
         <div class="sidebar-user" onclick="navigate('#/settings')">
           <div class="sidebar-avatar">${initials}</div>
@@ -4058,9 +4138,9 @@
         const el = document.getElementById(id);
         if (!el) return;
         const tabs = [
-          { key: 'alarms', label: 'Alarms', icon: '', hash: '#/home' },
-          { key: 'groups', label: 'Groups', icon: '', hash: '#/groups' },
-          { key: 'settings', label: 'Settings', icon: '⚙️', hash: '#/settings' },
+          { key: 'alarms', label: 'Alarms', icon: '<i data-lucide="clock" class="lucide-icon lucide-icon-lg"></i>', hash: '#/home' },
+          { key: 'groups', label: 'Groups', icon: '<i data-lucide="users" class="lucide-icon lucide-icon-lg"></i>', hash: '#/groups' },
+          { key: 'settings', label: 'Settings', icon: '<i data-lucide="settings" class="lucide-icon lucide-icon-lg"></i>', hash: '#/settings' },
         ];
         el.innerHTML = tabs.map(t => `
         <div class="nav-item ${t.key === activeTab ? 'active' : ''}" onclick="navigate('${t.hash}')">
@@ -4076,8 +4156,7 @@
           <div>
             <div class="alarm-card-time">${alarm.time}</div>
             <div class="alarm-card-label">${alarm.group}</div>
-            <div class="alarm-card-tone"> ${alarm.tone}</div>
-          </div>
+            <div class="alarm-card-tone"><i data-lucide="bell" class="lucide-icon lucide-icon-sm icon-prefix"></i>${alarm.tone}</div>
           </div>
           <label class="toggle">
             <input type="checkbox" ${alarm.active ? 'checked' : ''} onchange="toggleAlarmStatus('${alarm.id}', this.checked)" />
@@ -4089,12 +4168,12 @@
       function MemberStatusRow(member, status, nudgeable) {
         const initials = member.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
         const badge = status === 'awake'
-          ? `<span class="member-badge badge-awake"> Awake</span>`
+          ? `<span class="member-badge badge-awake"><i data-lucide="smile" class="lucide-icon lucide-icon-sm icon-prefix"></i>Awake</span>`
           : status === 'sleeping'
-            ? `<span class="member-badge badge-sleeping"> Sleeping</span>`
-            : `<span class="member-badge badge-pending">Pending</span>`;
+            ? `<span class="member-badge badge-sleeping"><i data-lucide="moon" class="lucide-icon lucide-icon-sm icon-prefix"></i>Sleeping</span>`
+            : `<span class="member-badge badge-pending"><i data-lucide="clock" class="lucide-icon lucide-icon-sm icon-prefix"></i>Pending</span>`;
         const nudge = nudgeable && status === 'sleeping'
-          ? `<button class="nudge-btn" id="nudge-${member.id}" onclick="sendNudge('${member.id}')"> Nudge</button>`
+          ? `<button class="nudge-btn" id="nudge-${member.id}" onclick="sendNudge('${member.id}')"><i data-lucide="zap" class="lucide-icon lucide-icon-sm icon-prefix"></i>Nudge</button>`
           : '';
         return `
         <div class="member-row">
@@ -4939,7 +5018,8 @@
 
         const uid = getCurrentUserId();
         if (!uid) {
-          listEl.innerHTML = `<div style="padding:14px 16px; color:var(--text-secondary); font-size:13px;">Log in to see your saved tones.</div>`;
+          listEl.innerHTML = `<div style="padding:14px 16px; color:var(--text-secondary); font-size:13px; display:flex; align-items:center; gap:8px;"><i data-lucide="lock" class="lucide-icon lucide-icon-sm" style="color:var(--text-secondary);"></i>Log in to see your saved tones.</div>`;
+          window.refreshIcons();
           return;
         }
 
@@ -4954,29 +5034,34 @@
           if (error) throw error;
 
           if (!files || files.length === 0) {
-            listEl.innerHTML = `<div style="padding:14px 16px; color:var(--text-secondary); font-size:13px; text-align:center;">No saved tones yet. Upload or record your first one ⬆️</div>`;
+            listEl.innerHTML = `<div style="padding:14px 16px; color:var(--text-secondary); font-size:13px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;"><i data-lucide="music" class="lucide-icon" style="width:24px;height:24px;color:var(--text-secondary);opacity:0.6;"></i>No saved tones yet. Upload or record your first one</div>`;
+            window.refreshIcons();
             return;
           }
 
           // Determine icon: voice notes vs uploaded audio
           listEl.innerHTML = files.map(f => {
             const isVoice = f.name.includes('voicenote') || f.name.endsWith('.webm');
-            const icon = isVoice ? '🎙️' : '';
+            const icon = isVoice 
+              ? '<i data-lucide="mic" class="lucide-icon lucide-icon-sm" style="color:var(--primary);"></i>' 
+              : '<i data-lucide="music-2" class="lucide-icon lucide-icon-sm" style="color:var(--text-secondary);"></i>';
             const rawName = f.name.replace(/^\d+_/, '').replace(/\.[^/.]+$/, ''); // strip timestamp prefix and extension
             const displayName = decodeURIComponent(rawName).replace(/_/g, ' ');
             const path = `${uid}/${f.name}`;
             const isSelected = AppState.selectedTone?.url?.includes(encodeURIComponent(f.name));
             return `
               <div class="tone-row" id="cust-tone-${f.id || f.name}" onclick="selectCustomTone('${path}', '${displayName}', '${f.id || f.name}')" style="cursor:pointer;">
-                <span class="tone-icon">${icon}</span>
+                <span class="tone-icon" style="display:flex; align-items:center; justify-content:center;">${icon}</span>
                 <span class="tone-name" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${displayName}</span>
-                <span id="cust-check-${f.id || f.name}" style="color:var(--primary); font-weight:800; font-size:16px; opacity:${isSelected ? 1 : 0};">&#10003;</span>
+                <span id="cust-check-${f.id || f.name}" style="color:var(--primary); opacity:${isSelected ? 1 : 0}; display:inline-flex; align-items:center;"><i data-lucide="check" class="lucide-icon lucide-icon-sm"></i></span>
               </div>`;
           }).join('');
+          window.refreshIcons();
 
         } catch (e) {
           console.error('[Wakeit] loadCustomTones error:', e);
-          listEl.innerHTML = `<div style="padding:14px 16px; color:var(--danger); font-size:13px;">Could not load tones: ${e.message}</div>`;
+          listEl.innerHTML = `<div style="padding:14px 16px; color:var(--danger); font-size:13px; display:flex; align-items:center; gap:8px;"><i data-lucide="alert-circle" class="lucide-icon lucide-icon-sm" style="color:var(--danger);"></i>Could not load tones: ${e.message}</div>`;
+          window.refreshIcons();
         }
       }
 
@@ -5021,14 +5106,25 @@
       function previewTone(id) {
         stopTonePreview();
         // Reset all play buttons
-        document.querySelectorAll('[id^="tone-play-"]').forEach(b => { b.textContent = '▶'; b.style.color = ''; });
+        document.querySelectorAll('[id^="tone-play-"]').forEach(b => {
+          b.innerHTML = '<i data-lucide="play" class="lucide-icon lucide-icon-sm"></i>';
+          b.style.color = '';
+        });
         const btn = document.getElementById('tone-play-' + id);
-        if (btn) { btn.textContent = '⏹'; btn.style.color = 'var(--primary)'; }
+        if (btn) {
+          btn.innerHTML = '<i data-lucide="square" class="lucide-icon lucide-icon-sm"></i>';
+          btn.style.color = 'var(--primary)';
+        }
         // Synthesise and auto-reset button after tone ends
         const durations = { beep: 1.7, birds: 1.8, rise: 3.0, buzz: 1.5 };
         synthesiseTone(id);
+        window.refreshIcons();
         tonePreviewAudio = setTimeout(() => {
-          if (btn) { btn.textContent = '▶'; btn.style.color = ''; }
+          if (btn) {
+            btn.innerHTML = '<i data-lucide="play" class="lucide-icon lucide-icon-sm"></i>';
+            btn.style.color = '';
+            window.refreshIcons();
+          }
           tonePreviewAudio = null;
         }, (durations[id] || 2) * 1000);
       }
@@ -5038,7 +5134,11 @@
           clearTimeout(tonePreviewAudio);
           tonePreviewAudio = null;
         }
-        document.querySelectorAll('[id^="tone-play-"]').forEach(b => { b.textContent = '▶'; b.style.color = ''; });
+        document.querySelectorAll('[id^="tone-play-"]').forEach(b => {
+          b.innerHTML = '<i data-lucide="play" class="lucide-icon lucide-icon-sm"></i>';
+          b.style.color = '';
+        });
+        window.refreshIcons();
       }
 
       /* Cache a tone URL using the Cache API */
@@ -5111,10 +5211,11 @@
 
         if (!allIds.length) {
           if (list) list.innerHTML = `<div class="empty-state">
-          <div class="empty-icon"></div>
+          <div class="empty-icon"><i data-lucide="users" class="lucide-icon" style="width: 48px; height: 48px; color: var(--text-secondary); opacity: 0.5;"></i></div>
           <div class="empty-title">No groups yet</div>
           <div class="empty-sub">Create a group or join one with an invite code.</div>
         </div>`;
+          window.refreshIcons();
           return;
         }
 
@@ -5129,25 +5230,32 @@
 
         if (!groups.length) {
           if (list) list.innerHTML = `<div class="empty-state">
-          <div class="empty-icon">⚠️</div>
+          <div class="empty-icon"><i data-lucide="wifi-off" class="lucide-icon" style="width: 48px; height: 48px; color: var(--danger); opacity: 0.7;"></i></div>
           <div class="empty-title">Couldn't load groups</div>
           <div class="empty-sub">Check your connection and pull to refresh.</div>
         </div>`;
+          window.refreshIcons();
           return;
         }
 
-        if (list) list.innerHTML = groups.map(g => `
-        <div class="group-card" onclick="openGroupDetail('${g.id}')">
-          <span class="group-emoji">${g.emoji || ''}</span>
-          <div class="group-info">
-            <div class="group-name">${g.name}</div>
-            <div class="group-meta">Code: ${g.invite_code}</div>
-          </div>
-          <span class="group-chevron">›</span>
-        </div>`).join('');
+        if (list) {
+          list.innerHTML = groups.map(g => `
+          <div class="group-card" onclick="openGroupDetail('${g.id}')">
+            <span class="group-emoji">${g.emoji || ''}</span>
+            <div class="group-info">
+              <div class="group-name">${g.name}</div>
+              <div class="group-meta">Code: ${g.invite_code}</div>
+            </div>
+            <span class="group-chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span>
+          </div>`).join('');
+          window.refreshIcons();
+        }
         } catch(err) {
           console.error('[Wakeit] initGroups() CRASHED:', err);
-          if (list) list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Something went wrong</div><div class="empty-sub">${err.message}</div></div>`;
+          if (list) {
+            list.innerHTML = `<div class="empty-state"><div class="empty-icon"><i data-lucide="alert-triangle" class="lucide-icon" style="width: 48px; height: 48px; color: var(--danger); opacity: 0.7;"></i></div><div class="empty-title">Something went wrong</div><div class="empty-sub">${err.message}</div></div>`;
+            window.refreshIcons();
+          }
         }
       }
 
@@ -5201,7 +5309,7 @@
         if (defaultEmoji) defaultEmoji.classList.add('selected');
 
         const btn = document.getElementById('btn-create-group');
-        if (btn) { btn.disabled = false; btn.textContent = 'Create Group'; btn.onclick = doCreateGroup; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Group'; btn.onclick = doCreateGroup; }
       }
 
       let _creatingGroup = false; // debounce flag
@@ -5211,7 +5319,7 @@
         _creatingGroup = true;
 
         const btn = document.getElementById('btn-create-group');
-        const originalText = btn ? btn.textContent : 'Create Group';
+        const originalText = btn ? btn.innerHTML : '<i data-lucide="plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Group';
         if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #fff; border-bottom-color:transparent; border-radius:50%; animation: spin 1s linear infinite; vertical-align:middle; margin-right:8px;"></span>Creating…'; }
         showToast('Creating your group…', 'info');
 
@@ -5222,12 +5330,12 @@
 
           if (!name) {
             showToast('Enter a group name', 'error');
-            if (btn) { btn.disabled = false; btn.textContent = originalText; }
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
             _creatingGroup = false; return;
           }
           if (!rawMembers || isNaN(expectedMembers) || expectedMembers < 1) {
             showToast('Enter how many members will be in this group', 'error');
-            if (btn) { btn.disabled = false; btn.textContent = originalText; }
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
             _creatingGroup = false; return;
           }
 
@@ -5251,7 +5359,7 @@
               errDiv.style.display = 'block';
               errDiv.innerHTML = `${rpcErr.message || 'Failed to create group.'} <button onclick="doCreateGroup()" style="margin-left:8px; padding:4px 8px; border-radius:4px; background:var(--danger); color:#fff; border:none; cursor:pointer;">Retry</button>`;
             }
-            if (btn) { btn.disabled = false; btn.textContent = originalText; }
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
             _creatingGroup = false; return;
           }
 
@@ -5263,7 +5371,7 @@
               errDiv.style.display = 'block';
               errDiv.innerHTML = `${result.error} <button onclick="doCreateGroup()" style="margin-left:8px; padding:4px 8px; border-radius:4px; background:var(--danger); color:#fff; border:none; cursor:pointer;">Retry</button>`;
             }
-            if (btn) { btn.disabled = false; btn.textContent = originalText; }
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
             _creatingGroup = false; return;
           }
 
@@ -5286,7 +5394,7 @@
             errDiv.innerHTML = 'Something went wrong. <button onclick="doCreateGroup()" style="margin-left:8px; padding:4px 8px; border-radius:4px; background:var(--danger); color:#fff; border:none; cursor:pointer;">Retry</button>';
           }
         } finally {
-          if (btn) { btn.disabled = false; btn.textContent = originalText; }
+          if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
           _creatingGroup = false;
         }
       }
@@ -5374,23 +5482,26 @@
       function renderGroupMembers(members, group, isAdmin, memberList, metaEl) {
         const memberCount = members?.length || 0;
         if (metaEl) metaEl.textContent = `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
-        if (memberList) memberList.innerHTML = (members || []).map(m => {
-          const prof = m.profiles;
-          const n = prof?.name || 'Member';
-          const initials = n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-          const isOwner = m.user_id === group.owner_id;
-          const removeBtn = (isAdmin && !isOwner)
-            ? `<button class="remove-member-btn" onclick="removeMember('${group.id}','${m.user_id}','${n.replace(/'/g, '&#39;')}')" title="Remove member"> Remove</button>`
-            : '';
-          return `<div class="member-row" style="justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div class="member-avatar">${initials}</div>
-              <span class="member-name">${n}</span>
-              ${isOwner ? '<span class="member-badge badge-admin">Admin</span>' : ''}
-            </div>
-            ${removeBtn}
-          </div>`;
-        }).join('');
+        if (memberList) {
+          memberList.innerHTML = (members || []).map(m => {
+            const prof = m.profiles;
+            const n = prof?.name || 'Member';
+            const initials = n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            const isOwner = m.user_id === group.owner_id;
+            const removeBtn = (isAdmin && !isOwner)
+              ? `<button class="remove-member-btn" onclick="removeMember('${group.id}','${m.user_id}','${n.replace(/'/g, '&#39;')}')" title="Remove member"><i data-lucide="user-minus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Remove</button>`
+              : '';
+            return `<div class="member-row" style="justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="member-avatar">${initials}</div>
+                <span class="member-name">${n}</span>
+                ${isOwner ? '<span class="member-badge badge-admin"><i data-lucide="crown" class="lucide-icon lucide-icon-sm icon-prefix"></i>Admin</span>' : ''}
+              </div>
+              ${removeBtn}
+            </div>`;
+          }).join('');
+          window.refreshIcons();
+        }
       }
 
       /** Renders group alarms into the alarm list */
@@ -5688,10 +5799,10 @@
           const status = latestMap[m.user_id] || 'pending';
           const dotCls = status === 'awake' ? 'dot-awake' : status === 'sleeping' ? 'dot-sleeping' : 'dot-pending';
           const badge = status === 'awake'
-            ? `<span class="member-badge badge-awake"> Awake</span>`
+            ? `<span class="member-badge badge-awake"><i data-lucide="smile" class="lucide-icon lucide-icon-sm icon-prefix"></i>Awake</span>`
             : status === 'sleeping'
-              ? `<span class="member-badge badge-sleeping"> Sleeping</span>`
-              : `<span class="member-badge" style="background:rgba(142,142,147,0.15);color:var(--text-secondary);"> Pending</span>`;
+              ? `<span class="member-badge badge-sleeping"><i data-lucide="moon" class="lucide-icon lucide-icon-sm icon-prefix"></i>Sleeping</span>`
+              : `<span class="member-badge" style="background:rgba(142,142,147,0.15);color:var(--text-secondary);"><i data-lucide="clock" class="lucide-icon lucide-icon-sm icon-prefix"></i>Pending</span>`;
           return `<div class="live-status-row">
             <div class="live-status-dot ${dotCls}"></div>
             <div class="member-avatar" style="width:32px;height:32px;font-size:12px;">${initials}</div>
@@ -5699,6 +5810,7 @@
             ${badge}
           </div>`;
         }).join('');
+        window.refreshIcons();
       }
 
       /* Emoji selector helper (called from HTML onclick) */
@@ -6058,60 +6170,64 @@
         initOTPInput();
 
         const btn = document.getElementById('btn-join-group');
-        if (btn) btn.onclick = async () => {
-          const boxes = document.querySelectorAll('.otp-box');
-          const code = Array.from(boxes).map(b => b.value).join('').toUpperCase();
-          if (code.length < 6) { showToast('Enter the full 6-digit code', 'error'); return; }
+        if (btn) {
+          btn.innerHTML = '<i data-lucide="user-plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Join Group';
+          btn.onclick = async () => {
+            const boxes = document.querySelectorAll('.otp-box');
+            const code = Array.from(boxes).map(b => b.value).join('').toUpperCase();
+            if (code.length < 6) { showToast('Enter the full 6-digit code', 'error'); return; }
 
-          btn.disabled = true; btn.innerHTML = '<span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #fff; border-bottom-color:transparent; border-radius:50%; animation: spin 1s linear infinite; vertical-align:middle; margin-right:8px;"></span>Joining…';
-          const uid = getCurrentUserId();
-          if (!uid) {
-            showToast('Please log in first', 'error');
-            btn.disabled = false; btn.textContent = 'Join Group';
-            return;
-          }
-
-          try {
-            // Single RPC call — handles invite lookup, membership check, capacity, and insert
-            const { data: result, error: rpcErr } = await db.rpc('join_group_by_code', {
-              p_invite_code: code
-            });
-
-            if (rpcErr) {
-              console.error('[Wakeit] Join group RPC error:', rpcErr);
-              showToast(rpcErr.message || 'Failed to join group.', 'error');
-              btn.disabled = false; btn.textContent = 'Join Group';
+            btn.disabled = true; btn.innerHTML = '<span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #fff; border-bottom-color:transparent; border-radius:50%; animation: spin 1s linear infinite; vertical-align:middle; margin-right:8px;"></span>Joining…';
+            const uid = getCurrentUserId();
+            if (!uid) {
+              showToast('Please log in first', 'error');
+              btn.disabled = false; btn.innerHTML = '<i data-lucide="user-plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Join Group';
               return;
             }
 
-            // Check for server-side validation errors
-            if (result?.error) {
-              showToast(result.error, 'error');
-              const errEl = document.getElementById('join-error');
-              if (errEl) errEl.textContent = result.error;
-              btn.disabled = false; btn.textContent = 'Join Group';
-              return;
-            }
+            try {
+              // Single RPC call — handles invite lookup, membership check, capacity, and insert
+              const { data: result, error: rpcErr } = await db.rpc('join_group_by_code', {
+                p_invite_code: code
+              });
 
-            // Already a member — navigate directly
-            if (result?.already_member) {
+              if (rpcErr) {
+                console.error('[Wakeit] Join group RPC error:', rpcErr);
+                showToast(rpcErr.message || 'Failed to join group.', 'error');
+                btn.disabled = false; btn.innerHTML = '<i data-lucide="user-plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Join Group';
+                return;
+              }
+
+              // Check for server-side validation errors
+              if (result?.error) {
+                showToast(result.error, 'error');
+                const errEl = document.getElementById('join-error');
+                if (errEl) errEl.textContent = result.error;
+                btn.disabled = false; btn.innerHTML = '<i data-lucide="user-plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Join Group';
+                return;
+              }
+
+              // Already a member — navigate directly
+              if (result?.already_member) {
+                AppState.currentGroup = result;
+                navigate('#/group-detail');
+                showToast('You\u2019re already in this group!', 'info');
+                return;
+              }
+
+              // Success!
               AppState.currentGroup = result;
+              showToast('Joined! Welcome to ' + result.name + ' ', 'success');
+              notifyGroupOwner(result).catch(() => { /* silent fail */ });
               navigate('#/group-detail');
-              showToast('You\u2019re already in this group!', 'info');
-              return;
+            } catch (err) {
+              console.error('[Wakeit] Join group error:', err);
+              showToast('Something went wrong. Please try again.', 'error');
+              btn.disabled = false; btn.innerHTML = '<i data-lucide="user-plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Join Group';
             }
-
-            // Success!
-            AppState.currentGroup = result;
-            showToast('Joined! Welcome to ' + result.name + ' ', 'success');
-            notifyGroupOwner(result).catch(() => { /* silent fail */ });
-            navigate('#/group-detail');
-          } catch (err) {
-            console.error('[Wakeit] Join group error:', err);
-            showToast('Something went wrong. Please try again.', 'error');
-            btn.disabled = false; btn.textContent = 'Join Group';
-          }
-        };
+          };
+          window.refreshIcons();
+        }
       }
       function initOTPInput() {
         const boxes = document.querySelectorAll('.otp-box');
@@ -6732,14 +6848,15 @@
         if (isAdmin) {
           dz.innerHTML = `
             <button class="btn-danger" style="width:100%;margin-bottom:var(--space-2);"
-              onclick="openModal('modal-delete-group')">🗑 Delete Group</button>
+              onclick="openModal('modal-delete-group')"><i data-lucide="trash-2" class="lucide-icon lucide-icon-sm icon-prefix"></i>Delete Group</button>
             <div class="danger-text">Deleting removes all members and alarms permanently.</div>`;
         } else {
           dz.innerHTML = `
             <button class="btn-outline" style="width:100%;border-color:var(--sleeping-color);color:var(--sleeping-color);"
-              onclick="openModal('modal-leave-group')"> Request to Leave Group</button>
+              onclick="openModal('modal-leave-group')"><i data-lucide="log-out" class="lucide-icon lucide-icon-sm icon-prefix"></i>Request to Leave Group</button>
             <div class="danger-text" style="margin-top:6px;">Your admin must approve before you're removed.</div>`;
         }
+        window.refreshIcons();
       }
 
       /** Member submits a leave request — inserts into leave_requests table */
@@ -7787,9 +7904,16 @@
           success: '#4CD964', error: '#FF3B30',
           info: '#C84BFF', warning: '#FF9500'
         };
+        const icons = {
+          success: 'check-circle-2',
+          error: 'x-circle',
+          warning: 'alert-triangle',
+          info: 'info'
+        };
         const toast = document.createElement('div');
         toast.className = 'toast';
-        toast.textContent = message;
+        const iconName = icons[type] || 'info';
+        toast.innerHTML = `<span class="toast-inner"><i data-lucide="${iconName}" style="width:16px;height:16px;flex-shrink:0;stroke:currentColor;"></i><span>${message}</span></span>`;
         toast.style.background = colors[type] || colors.info;
         toast.style.position = 'fixed';
         toast.style.bottom = '90px';
@@ -7805,6 +7929,7 @@
         toast.style.whiteSpace = 'nowrap';
         toast.style.animation = 'toastIn 0.3s ease';
         document.body.appendChild(toast);
+        if (window.lucide) window.lucide.createIcons({ rootElement: toast, attrs: { 'stroke-width': 2, fill: 'none', stroke: 'currentColor' } });
         setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 2800);
       }
 
@@ -8128,13 +8253,12 @@
               <div style="font-size:10px;color:var(--text-secondary);">3 days</div>
             </div>
           </div>
-          <ul style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;padding-left:18px;line-height:1.9;">
-            <li>3 days full access to all features</li>
-            <li>Create up to 5 groups</li>
-            <li>No payment required</li>
+          <ul style="list-style:none;font-size:12px;color:var(--text-secondary);margin:0 0 12px;padding-left:0;line-height:1.9;">
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>3 days full access to all features</li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Create up to 5 groups</li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>No payment required</li>
           </ul>
-          <button class="btn-gradient" style="width:100%;font-size:13px;" onclick="activatePlan('free_trial')">Start
-            Free Trial</button>
+          <button class="btn-gradient" style="width:100%;font-size:13px;" onclick="activatePlan('free_trial')"><i data-lucide="zap" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Start Free Trial</button>
         </div>
 
         <!-- ── MEMBER ── -->
@@ -8150,13 +8274,13 @@
               <div style="font-size:10px;color:var(--text-secondary);">per year</div>
             </div>
           </div>
-          <ul style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;padding-left:18px;line-height:1.9;">
-            <li>Join unlimited groups</li>
-            <li>Receive alarms &amp; respond</li>
-            <li>Cannot create groups or alarms</li>
+          <ul style="list-style:none;font-size:12px;color:var(--text-secondary);margin:0 0 12px;padding-left:0;line-height:1.9;">
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Join unlimited groups</li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Receive alarms &amp; respond</li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="x" style="width:13px;height:13px;flex-shrink:0;stroke:var(--text-secondary);stroke-width:2.5;fill:none;"></i>Cannot create groups or alarms</li>
           </ul>
           <button class="btn-outline plan-btn" data-inr="Get Member — ₹49/yr" data-usd="Get Member — $0.59/yr"
-            style="width:100%;font-size:13px;" onclick="activatePlan('member')">Get Member — ₹49/yr</button>
+            style="width:100%;font-size:13px;" onclick="activatePlan('member')"><i data-lucide="credit-card" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Member — ₹49/yr</button>
         </div>
 
         <!-- ── ADMIN ── -->
@@ -8175,14 +8299,14 @@
               <div style="font-size:10px;color:var(--text-secondary);">per year</div>
             </div>
           </div>
-          <ul style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;padding-left:18px;line-height:1.9;">
-            <li>Create up to <strong>5 groups</strong></li>
-            <li>Up to <strong>20 members</strong> per group</li>
-            <li>Custom Wake Tones &amp; Voice Notes</li>
-            <li>Wake dashboard &amp; nudge sleepers</li>
+          <ul style="list-style:none;font-size:12px;color:var(--text-secondary);margin:0 0 12px;padding-left:0;line-height:1.9;">
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Create up to <strong>5 groups</strong></li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Up to <strong>20 members</strong> per group</li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Custom Wake Tones &amp; Voice Notes</li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Wake dashboard &amp; nudge sleepers</li>
           </ul>
           <button class="btn-gradient plan-btn" data-inr="Get Admin — ₹499/yr" data-usd="Get Admin — $5.99/yr"
-            style="width:100%;font-size:13px;" onclick="activatePlan('admin')">Get Admin — ₹499/yr</button>
+            style="width:100%;font-size:13px;" onclick="activatePlan('admin')"><i data-lucide="zap" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Admin — ₹499/yr</button>
         </div>
 
         <!-- ── ORGANISATION ── -->
@@ -8199,20 +8323,19 @@
               <div style="font-size:10px;color:var(--text-secondary);">per year</div>
             </div>
           </div>
-          <ul style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;padding-left:18px;line-height:1.9;">
-            <li>Create up to <strong>10 groups</strong></li>
-            <li>Up to <strong>50 members</strong> per group</li>
-            <li>Everything in Admin plan</li>
-            <li>Priority support</li>
+          <ul style="list-style:none;font-size:12px;color:var(--text-secondary);margin:0 0 12px;padding-left:0;line-height:1.9;">
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Create up to <strong>10 groups</strong></li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Up to <strong>50 members</strong> per group</li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Everything in Admin plan</li>
+            <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Priority support</li>
           </ul>
           <button class="btn-gradient plan-btn" data-inr="Get Organisation — ₹4,999/yr"
             data-usd="Get Organisation — $59.99/yr"
             style="width:100%;font-size:13px;background:linear-gradient(135deg,#FFD60A,#FF9F0A);color:#1C1C1E;font-weight:700;"
-            onclick="activatePlan('organisation')">Get Organisation — ₹4,999/yr</button>
+            onclick="activatePlan('organisation')"><i data-lucide="crown" style="width:15px;height:15px;flex-shrink:0;stroke:#1C1C1E;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Organisation — ₹4,999/yr</button>
         </div>
 
-        <div style="text-align:center;font-size:11px;color:var(--text-secondary);margin-bottom:8px;"> Secure payment
-          via Razorpay</div>
+        <div style="text-align:center;font-size:11px;color:var(--text-secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:5px;"><i data-lucide="shield-check" style="width:13px;height:13px;flex-shrink:0;stroke:var(--text-secondary);fill:none;"></i> Secure payment via Razorpay</div>
         <button id="plans-maybe-later-btn"
           style="width:100%;background:none;border:none;color:var(--text-secondary);font-size:12px;padding:8px;cursor:pointer;"
           onclick="closeModal('modal-plans')">Maybe later</button>
