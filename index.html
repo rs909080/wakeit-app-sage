@@ -5099,19 +5099,21 @@
           }
         }
 
-        // F1: Check for offline members (missing device token)
+        // F1: Check for offline members (missing device token) — EXCLUDE group owner
         const { data: members } = await db.from('group_members')
           .select('user_id, profiles!group_members_user_id_profiles_fkey(name, id)')
           .eq('group_id', group.id);
 
         if (members) {
-          const uids = members.map(m => m.user_id);
-          const { data: tokens } = await db.from('device_tokens')
-            .select('user_id')
-            .in('user_id', uids);
+          // Exclude the group owner (admin) — they never receive the alarm
+          const targetMembers = members.filter(m => m.user_id !== group.owner_id);
+          const uids = targetMembers.map(m => m.user_id);
+          const { data: tokens } = uids.length > 0
+            ? await db.from('device_tokens').select('user_id').in('user_id', uids)
+            : { data: [] };
           const hasToken = new Set(tokens?.map(t => t.user_id) || []);
-          const offlineNames = members
-            .filter(m => m.user_id !== uid && !hasToken.has(m.user_id))
+          const offlineNames = targetMembers
+            .filter(m => !hasToken.has(m.user_id))
             .map(m => m.profiles?.name || 'Someone');
 
           if (offlineNames.length > 0) {
@@ -5152,13 +5154,22 @@
           return;
         }
 
-        // Seed alarm_wake_status for every group member
+        // Seed alarm_wake_status + wake_attempts for every group member EXCEPT the owner
         const { data: groupMembers } = await db.from('group_members')
           .select('user_id').eq('group_id', group.id);
         if (groupMembers?.length) {
-          await db.from('alarm_wake_status').insert(
-            groupMembers.map(m => ({ alarm_id: alarm.id, user_id: m.user_id, status: 'pending' }))
-          );
+          // Exclude the group owner — they set the alarm, they don't receive it
+          const memberSeeds = groupMembers.filter(m => m.user_id !== group.owner_id);
+          if (memberSeeds.length) {
+            await Promise.all([
+              db.from('alarm_wake_status').insert(
+                memberSeeds.map(m => ({ alarm_id: alarm.id, user_id: m.user_id, status: 'pending', group_id: group.id }))
+              ),
+              db.from('wake_attempts').insert(
+                memberSeeds.map(m => ({ alarm_id: alarm.id, user_id: m.user_id, group_id: group.id, status: 'pending' }))
+              )
+            ]);
+          }
         }
 
         scheduleLocalAlarm(alarm);
@@ -5506,6 +5517,12 @@
           .from('groups').select('*').eq('created_by', uid);
         if (ownedErr) console.warn('[Wakeit] initGroups ownedGroups error:', ownedErr.message);
 
+        // Populate AppState.ownedGroupIds so triggerAlarm() can bypass ringing on the owner's device
+        AppState.ownedGroupIds.clear();
+        (ownedGroups || []).forEach(g => AppState.ownedGroupIds.add(g.id));
+        // Also check owner_id from memberships' groups (covers groups created via RPC)
+        // This is handled below when groups are fetched
+
         // Build a merged, deduplicated list of group IDs
         const memberGroupIds = (memberships || []).map(m => m.group_id);
         const ownedGroupIds  = (ownedGroups  || []).map(g => g.id);
@@ -5679,6 +5696,8 @@
 
           // Success!
           AppState.currentGroup = result;
+          // Track this group as owned so alarm bypass works immediately
+          if (result?.id) AppState.ownedGroupIds.add(result.id);
           const contentEl = document.getElementById('create-group-content');
           const successEl = document.getElementById('group-success-state');
           const codeEl = document.getElementById('success-invite-code');
@@ -5780,12 +5799,17 @@
         await initGroupDetailLiveStatus(group);
       }
 
-      /** Renders group members into the member list */
+      /** Renders group members into the member list — owner shown separately, not counted in members */
       function renderGroupMembers(members, group, isAdmin, memberList, metaEl) {
-        const memberCount = members?.length || 0;
+        // Separate owner from actual members — owner is Admin, not counted in member total
+        const ownerRow = (members || []).find(m => m.user_id === group.owner_id);
+        const actualMembers = (members || []).filter(m => m.user_id !== group.owner_id);
+        const memberCount = actualMembers.length;
         if (metaEl) metaEl.textContent = `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
         if (memberList) {
-          memberList.innerHTML = (members || []).map(m => {
+          // Build rows: admin owner first (with crown), then actual members
+          const allRows = [...(ownerRow ? [ownerRow] : []), ...actualMembers];
+          memberList.innerHTML = allRows.map(m => {
             const prof = m.profiles;
             const n = prof?.name || 'Member';
             const initials = n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -6095,7 +6119,9 @@
 
         const listEl = document.getElementById('live-status-list');
         if (!listEl) return;
-        listEl.innerHTML = (members || []).map(m => {
+        // Exclude the group owner — they never receive the alarm
+        const targetMembers = (members || []).filter(m => m.user_id !== group.owner_id);
+        listEl.innerHTML = targetMembers.map(m => {
           const n = m.profiles?.name || 'Member';
           const initials = n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
           const status = latestMap[m.user_id] || 'pending';
@@ -6195,10 +6221,19 @@
         const serverTimeNow = Date.now() + (window.clockOffset || 0);
         const alarmTime = new Date(alarm.alarm_time).getTime();
         const preFireBuffer = 3000; // Fire 3 seconds early for sync
+        const lateRingBuffer = 15 * 60 * 1000; // 15-minute window for offline recovery
         let delay = alarmTime - serverTimeNow - preFireBuffer;
 
-        if (delay < -preFireBuffer) return; // already passed completely
-        if (delay < 0) delay = 0; // if within buffer, fire immediately
+        // If alarm passed more than 15 minutes ago, skip completely
+        if (delay < -(lateRingBuffer)) {
+          console.log('[Wakeit] Alarm expired beyond 15-min late-ring buffer, skipping:', alarm.id);
+          return;
+        }
+        // If within the 15-min late-ring window (device was offline), ring immediately
+        if (delay < 0) {
+          delay = 0;
+          console.log('[Wakeit] Late-ring recovery — firing alarm immediately (was offline):', alarm.id);
+        }
 
         AppState.scheduledAlarmIds.add(alarm.id);
 
@@ -6426,11 +6461,34 @@
         }, 2500);
       }
 
-      function triggerAlarm(alarm) {
-        // FEATURE 2: Admin (group creator) should never hear their own alarm
-        if (alarm?.group_id && AppState.ownedGroupIds.has(alarm.group_id)) {
-          console.log('[Wakeit] Skipping alarm ring — current user is group owner for group:', alarm.group_id);
+      async function triggerAlarm(alarm) {
+        const uid = getCurrentUserId();
+
+        // ── STAGE 1: Alarm Creator Check — fastest bypass ──
+        if (alarm?.created_by && alarm.created_by === uid) {
+          console.log('[Wakeit] Skipping alarm ring — current user created this alarm:', alarm.id);
           return;
+        }
+
+        // ── STAGE 2: In-Memory Cache Check ──
+        if (alarm?.group_id && AppState.ownedGroupIds.has(alarm.group_id)) {
+          console.log('[Wakeit] Skipping alarm ring — current user owns group:', alarm.group_id);
+          return;
+        }
+
+        // ── STAGE 3: Live DB Fallback (cold-start / cache miss) ──
+        if (alarm?.group_id && uid) {
+          try {
+            const { data: grp } = await db.from('groups')
+              .select('owner_id').eq('id', alarm.group_id).single();
+            if (grp?.owner_id === uid) {
+              AppState.ownedGroupIds.add(alarm.group_id); // cache for future checks
+              console.log('[Wakeit] Skipping alarm ring — live DB confirmed owner for group:', alarm.group_id);
+              return;
+            }
+          } catch (e) {
+            console.warn('[Wakeit] triggerAlarm owner DB check failed:', e);
+          }
         }
 
         AppState.ringingAlarm = alarm;
@@ -6629,11 +6687,11 @@
                 if (recentAlarms?.[0]) {
                   alarm = recentAlarms[0];
 
-                  // FEATURE 2: Skip if this user is the group owner
-                  // AppState.ownedGroupIds may be empty on cold-start — do a live DB check
-                  let isOwner = AppState.ownedGroupIds.has(alarm.group_id);
-                  if (!isOwner && AppState.ownedGroupIds.size === 0) {
-                    // Cold-start: ownedGroupIds wasn't populated yet — query DB directly
+                  // FEATURE 2: Skip if this user is the group owner — always do a live DB check
+                  let isOwner = AppState.ownedGroupIds.has(alarm.group_id) ||
+                                (alarm.created_by && alarm.created_by === uid);
+                  if (!isOwner) {
+                    // Always verify against DB to be safe (works on cold-start too)
                     try {
                       const { data: grpData } = await db.from('groups')
                         .select('owner_id').eq('id', alarm.group_id).single();
@@ -8087,23 +8145,39 @@
       let alarmAudioSource = null;
 
       async function playAlarmAudio(toneUrl) {
+        // Use standard HTML5 Audio streaming — avoids CORS restrictions on Supabase Storage
+        // and supports all native codecs (webm, mp3, wav, ogg) on all browsers/platforms
         try {
-          alarmAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-          const response = await fetch(toneUrl);
-          const arrayBuffer = await response.arrayBuffer();
-          const audioBuffer = await alarmAudioContext.decodeAudioData(arrayBuffer);
+          const audio = new Audio(toneUrl);
+          audio.loop = true;
+          audio.volume = 0.3; // Start at 30%, ramp up below
+          audio.preload = 'auto';
 
-          alarmGainNode = alarmAudioContext.createGain();
-          alarmGainNode.gain.value = 2.0; // 200% volume
-          alarmGainNode.connect(alarmAudioContext.destination);
+          // Store reference for stopAlarmAudio() cleanup
+          AppState.alarmAudio = audio;
 
-          alarmAudioSource = alarmAudioContext.createBufferSource();
-          alarmAudioSource.buffer = audioBuffer;
-          alarmAudioSource.loop = true;
-          alarmAudioSource.connect(alarmGainNode);
-          alarmAudioSource.start(0);
+          // Volume ramp-up: 30% → 100% over 5 seconds
+          let currentVol = 0.3;
+          const rampInterval = setInterval(() => {
+            currentVol = Math.min(1.0, currentVol + 0.07);
+            if (AppState.alarmAudio) {
+              try { AppState.alarmAudio.volume = currentVol; } catch (_) { }
+            }
+            if (currentVol >= 1.0) clearInterval(rampInterval);
+          }, 500);
+          AppState._volumeRampInterval = rampInterval;
+
+          await audio.play();
+          console.log('[Wakeit] Custom tone playing via HTML5 Audio:', toneUrl);
         } catch (err) {
-          console.error('Audio play failed:', err);
+          console.error('[Wakeit] Custom tone playback failed, falling back to default beep:', err);
+          AppState.alarmAudio = null;
+          if (AppState._volumeRampInterval) {
+            clearInterval(AppState._volumeRampInterval);
+            AppState._volumeRampInterval = null;
+          }
+          // Graceful fallback — user always hears SOMETHING
+          playDefaultBeep();
         }
       }
 

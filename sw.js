@@ -5,7 +5,7 @@
    OneSignal runs in its own isolated scope (/push/onesignal/).
 ================================================ */
 
-const CACHE_NAME = 'wakeit-v28'; // v28 = never cache supabase.co requests
+const CACHE_NAME = 'wakeit-v29'; // v29 = cache Supabase Storage public tones for offline
 const ASSETS = [
   '/manifest.json',
   '/icon-192.png',
@@ -36,7 +36,29 @@ self.addEventListener('activate', (event) => {
 
 /* ── Fetch: network-first for navigation, cache-first for assets ── */
 self.addEventListener('fetch', (event) => {
-  // ── CRITICAL: Never intercept Supabase API calls — always hit network directly ──
+  // ── SUPABASE STORAGE: Cache public tone files for offline playback ──
+  // Match URLs like: https://xxx.supabase.co/storage/v1/object/public/user_data/...
+  if (event.request.url.includes('supabase.co/storage/v1/object/public')) {
+    event.respondWith(
+      caches.open('wakeit-tones').then(async (cache) => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached; // serve from cache immediately
+        try {
+          const response = await fetch(event.request);
+          if (response && response.status === 200) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        } catch (e) {
+          // Offline fallback: serve cached version if available
+          return cached || new Response('', { status: 503 });
+        }
+      })
+    );
+    return;
+  }
+
+  // ── CRITICAL: Never intercept other Supabase API calls — always hit network directly ──
   if (event.request.url.includes('supabase.co')) {
     event.respondWith(fetch(event.request));
     return;
