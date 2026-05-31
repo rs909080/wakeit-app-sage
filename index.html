@@ -2692,6 +2692,269 @@
     ::-webkit-scrollbar {
       width: 0;
     }
+
+    /* ================================================
+       MOBILE OPTIMIZATIONS (max-width: 767px)
+       Fixes: overlapping nav, text overflow, misaligned
+       buttons, and out-of-bounds UI elements on phones.
+    ================================================ */
+    @media (max-width: 767px) {
+
+      /* ── Auth / Login screen ── */
+      .login-page {
+        padding: 40px 20px 32px;
+      }
+
+      .auth-card {
+        padding: 24px 20px;
+        border-radius: 20px;
+      }
+
+      .auth-logo {
+        font-size: 28px;
+        margin-bottom: 6px;
+      }
+
+      .auth-tagline {
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+
+      .auth-tabs {
+        margin-bottom: 16px;
+      }
+
+      .auth-tab {
+        font-size: 13px;
+        padding: 8px 16px;
+      }
+
+      .auth-form {
+        gap: 12px;
+      }
+
+      .input-field {
+        font-size: 15px;
+        padding: 13px 14px 13px 40px;
+      }
+
+      .btn-gradient,
+      .btn-outline,
+      .btn-danger {
+        padding: 14px;
+        font-size: 15px;
+      }
+
+      .btn-google {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+
+      .forgot-link {
+        font-size: 12px;
+      }
+
+      /* ── Home screen ── */
+      .home-clock-wrap {
+        padding: 20px 16px 12px;
+      }
+
+      .home-clock-time {
+        font-size: 52px;
+      }
+
+      .home-clock-ampm {
+        font-size: 20px;
+      }
+
+      .home-clock-greeting {
+        font-size: 15px;
+      }
+
+      .home-clock-date {
+        font-size: 12px;
+      }
+
+      .next-alarm-card {
+        padding: 16px;
+      }
+
+      .next-alarm-time {
+        font-size: 36px;
+      }
+
+      .alarm-card {
+        padding: 14px 16px;
+      }
+
+      .alarm-card-time {
+        font-size: 20px;
+      }
+
+      .alarm-card-label {
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+      }
+
+      /* ── App Header ── */
+      .app-header {
+        padding: 48px 16px 12px;
+      }
+
+      .header-title {
+        font-size: 17px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100vw - 120px);
+      }
+
+      /* ── Bottom Nav ── */
+      .bottom-nav {
+        padding: 8px 0 env(safe-area-inset-bottom, 12px);
+      }
+
+      .nav-item {
+        gap: 2px;
+      }
+
+      .nav-label {
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 60px;
+      }
+
+      /* ── Cards / Sections ── */
+      .card {
+        padding: 16px;
+        border-radius: 16px;
+      }
+
+      .section-title {
+        font-size: 14px;
+      }
+
+      /* ── Groups screen ── */
+      .group-card {
+        padding: 14px 16px;
+      }
+
+      .group-name {
+        font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100vw - 100px);
+      }
+
+      .group-meta {
+        font-size: 12px;
+      }
+
+      /* ── Member rows ── */
+      .member-row {
+        flex-wrap: nowrap;
+        gap: 8px;
+      }
+
+      .member-name {
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+      }
+
+      /* ── Modals ── */
+      .modal-sheet {
+        padding: 20px 20px 24px;
+        border-radius: 24px 24px 0 0;
+      }
+
+      .modal-title {
+        font-size: 17px;
+      }
+
+      /* ── Alarm Ringing screen ── */
+      .ringing-time {
+        font-size: 64px;
+      }
+
+      .ringing-label {
+        font-size: 16px;
+      }
+
+      .reason-card {
+        padding: 14px 12px;
+        font-size: 14px;
+      }
+
+      /* ── Settings ── */
+      .settings-section-title {
+        font-size: 12px;
+      }
+
+      .settings-row {
+        padding: 14px 16px;
+      }
+
+      .settings-row-label {
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100vw - 100px);
+      }
+
+      /* ── Create Alarm dial ── */
+      .dial-wrap {
+        width: 220px;
+        height: 220px;
+      }
+
+      /* ── Tone picker ── */
+      .tone-row {
+        padding: 12px 14px;
+      }
+
+      .tone-name {
+        font-size: 14px;
+      }
+
+      /* ── General text overflow guard ── */
+      .page-content {
+        overflow-x: hidden;
+      }
+
+      h1, h2, h3 {
+        word-break: break-word;
+      }
+
+      /* ── FAB (floating action button) ── */
+      .fab {
+        width: 52px;
+        height: 52px;
+        bottom: 80px;
+        right: 16px;
+      }
+
+      /* ── Toast ── */
+      .toast {
+        left: 12px;
+        right: 12px;
+        bottom: 80px;
+        font-size: 13px;
+        padding: 12px 16px;
+        border-radius: 14px;
+        max-width: calc(100vw - 24px);
+        width: auto;
+      }
+    }
   </style>
 </head>
 
@@ -2909,7 +3172,7 @@
           <span class="input-label">Password</span>
           <span class="input-icon"><i data-lucide="lock" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="password" class="input-field" id="login-password" placeholder="••••••••" />
-          <span class="forgot-link">Forgot Password?</span>
+          <span class="forgot-link" id="forgot-password-link" onclick="handleForgotPassword()">Forgot Password?</span>
         </div>
         <div id="login-error" style="display:none; color:var(--danger); margin-bottom:12px; font-size:14px;"></div>
         <button id="btn-login" class="btn-gradient"><i data-lucide="log-in" class="lucide-icon lucide-icon-sm icon-prefix"></i>Log In</button>
@@ -3840,7 +4103,7 @@
               showToast('Account created! ', 'success');
               // Only navigate if appInit() has already finished its boot route,
               // and the user is actually on a guest screen (so we don't redirect refreshed users).
-              const isGuestHash = PUBLIC_ROUTES.includes(window.location.hash) || !window.location.hash;
+              const isGuestHash = PUBLIC_ROUTES.includes(window.location.hash) || !window.location.hash || window.location.hash.startsWith('#access_token');
               if (isGuestHash) {
                 if (_bootDone) {
                   navigate('#/home');
@@ -3857,7 +4120,7 @@
             }
           } else if (event === 'SIGNED_IN') {
             // Only redirect on SIGNED_IN if user is on a guest screen (avoiding redirect on session restore / refresh)
-            const isGuestHash = PUBLIC_ROUTES.includes(window.location.hash) || !window.location.hash;
+            const isGuestHash = PUBLIC_ROUTES.includes(window.location.hash) || !window.location.hash || window.location.hash.startsWith('#access_token');
             if (isGuestHash) {
               if (_bootDone) {
                 navigate('#/home');
@@ -4223,8 +4486,8 @@
           if (!navigated) {
             navigated = true;
             console.warn('[Wakeit] initSplash safety timeout triggered');
-            const onboarded = safeLocalStorage.getItem('wakeit_onboarded');
-            navigate(onboarded ? '#/login' : '#/landing');
+            // Always go to login — landing page is removed from the user flow
+            navigate('#/login');
           }
         }, 3000);
 
@@ -4232,7 +4495,6 @@
         try {
           const session = await getSafeSession();
           const plan = safeLocalStorage.getItem('wakeit_plan');
-          const onboarded = safeLocalStorage.getItem('wakeit_onboarded');
 
           if (navigated) return; // safety timer beat us to it
           navigated = true;
@@ -4250,10 +4512,9 @@
               }).eq('id', session.user.id).then(() => { });
             }
             navigate('#/home');
-          } else if (onboarded) {
-            navigate('#/login');
           } else {
-            navigate('#/landing');
+            // Always send unauthenticated users directly to Login
+            navigate('#/login');
           }
         } catch (err) {
           // If anything throws, still navigate
@@ -4261,7 +4522,7 @@
           if (!navigated) {
             navigated = true;
             clearTimeout(safetyTimer);
-            navigate('#/landing');
+            navigate('#/login');
           }
         }
       }
@@ -4414,11 +4675,52 @@
           btn.onclick = async () => {
             const { error } = await db.auth.signInWithOAuth({
               provider: 'google',
-              options: { redirectTo: `${window.location.origin}${window.location.pathname}#/home` }
+              options: { redirectTo: `${window.location.origin}${window.location.pathname}` }
             });
             if (error) showToast(friendlyError(error, 'login'), 'error');
           };
         });
+      }
+
+      /**
+       * Forgot Password — triggers Supabase password reset email.
+       * Opens an inline prompt so the user can enter their email without leaving the login screen.
+       */
+      async function handleForgotPassword() {
+        const emailInput = document.getElementById('login-email');
+        const email = emailInput?.value?.trim();
+
+        if (!email) {
+          // Prompt user to fill in email if blank
+          showToast('Enter your email address above first', 'info');
+          if (emailInput) emailInput.focus();
+          return;
+        }
+
+        const forgotLink = document.getElementById('forgot-password-link');
+        if (forgotLink) {
+          forgotLink.textContent = 'Sending…';
+          forgotLink.style.pointerEvents = 'none';
+        }
+
+        try {
+          const { error } = await db.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}${window.location.pathname}#/login`
+          });
+
+          if (error) {
+            showToast('Could not send reset email: ' + error.message, 'error');
+          } else {
+            showToast('✉️ Password reset email sent! Check your inbox.', 'success');
+          }
+        } catch (e) {
+          showToast('Something went wrong. Please try again.', 'error');
+        } finally {
+          if (forgotLink) {
+            forgotLink.textContent = 'Forgot Password?';
+            forgotLink.style.pointerEvents = '';
+          }
+        }
       }
       function switchAuthTab(tab) {
         const signupForm = document.getElementById('form-signup');
@@ -5027,7 +5329,7 @@
         listEl.innerHTML = `<div class="skeleton-card" style="height:32px; margin: 8px;"></div><div class="skeleton-card" style="height:32px; margin: 8px;"></div>`;
 
         try {
-          const { data: files, error } = await db.storage.from('alarm-tones').list(uid + '/', {
+          const { data: files, error } = await db.storage.from('user_data').list(uid + '/', {
             limit: 50, offset: 0, sortBy: { column: 'created_at', order: 'desc' }
           });
 
@@ -5077,7 +5379,7 @@
         if (check) check.style.opacity = '1';
 
         // Resolve public URL for the file
-        const { data: urlData } = db.storage.from('alarm-tones').getPublicUrl(storagePath);
+        const { data: urlData } = db.storage.from('user_data').getPublicUrl(storagePath);
         const publicUrl = urlData?.publicUrl || '';
 
         AppState.selectedTone = { name: displayName, type: 'upload', url: publicUrl };
@@ -6328,7 +6630,20 @@
                   alarm = recentAlarms[0];
 
                   // FEATURE 2: Skip if this user is the group owner
-                  if (AppState.ownedGroupIds.has(alarm.group_id)) {
+                  // AppState.ownedGroupIds may be empty on cold-start — do a live DB check
+                  let isOwner = AppState.ownedGroupIds.has(alarm.group_id);
+                  if (!isOwner && AppState.ownedGroupIds.size === 0) {
+                    // Cold-start: ownedGroupIds wasn't populated yet — query DB directly
+                    try {
+                      const { data: grpData } = await db.from('groups')
+                        .select('owner_id').eq('id', alarm.group_id).single();
+                      isOwner = (grpData?.owner_id === uid);
+                      if (isOwner) AppState.ownedGroupIds.add(alarm.group_id);
+                    } catch (ownerErr) {
+                      console.warn('[Wakeit] owner check failed:', ownerErr);
+                    }
+                  }
+                  if (isOwner) {
                     console.log('[Wakeit] Cold-start skip — user is owner of group:', alarm.group_id);
                     navigate('#/home');
                     return;
@@ -7347,8 +7662,8 @@
         updateUploadProgress(10);
 
         const uploadPromise = db.storage
-          .from('alarm-tones')
-          .upload(fileName, file, { upsert: true, contentType: file.type });
+          .from('user_data')
+          .upload(fileName, file, { upsert: true, contentType: file.type || 'audio/mpeg' });
 
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Upload timed out')), 30000)
@@ -7367,7 +7682,7 @@
 
         updateUploadProgress(100);
         const { data: urlData } = db.storage
-          .from('alarm-tones').getPublicUrl(fileName);
+          .from('user_data').getPublicUrl(fileName);
         return urlData?.publicUrl || null;
       }
 
@@ -8226,6 +8541,32 @@
         showFallbackUI(e && e.message ? e.message : String(e));
       }
       console.log('[Wakeit] appInit() called (async, running in background)');
+
+      /* ================================================
+         OFFLINE / ONLINE ALARM RECOVERY SYNC
+         When the device comes back online after being
+         offline, or when the tab becomes visible again,
+         reload alarms from Supabase and re-schedule any
+         that are still upcoming so they fire on time.
+      ================================================ */
+      window.addEventListener('online', () => {
+        console.log('[Wakeit] Device came online — syncing alarms');
+        if (AppState.user) {
+          // Small delay to let the network stabilise before querying Supabase
+          setTimeout(() => {
+            try { loadHomeAlarms(); } catch (e) { console.warn('[Wakeit] Online sync failed:', e); }
+          }, 1500);
+        }
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && AppState.user) {
+          console.log('[Wakeit] App foregrounded — syncing alarms');
+          setTimeout(() => {
+            try { loadHomeAlarms(); } catch (e) { console.warn('[Wakeit] Visibility sync failed:', e); }
+          }, 500);
+        }
+      });
     </script>
 
     <!-- Plans Modal — at body level so it always shows regardless of active screen -->
