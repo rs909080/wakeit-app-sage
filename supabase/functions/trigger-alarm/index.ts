@@ -89,15 +89,17 @@ Deno.serve(async (req) => {
     //    Online clients subscribe to this channel and trigger alarm locally
     const channelName = `alarm-group-${alarm.group_id}`;
     await supabaseAdmin.channel(channelName).send({
-      type: "broadcast",
-      event: "alarm-ring",
+      type: 'broadcast',
+      event: 'alarm-ring',
       payload: {
         alarm_id: alarm.id,
         group_id: alarm.group_id,
         alarm_time: alarm.alarm_time,
         tone_name: alarm.tone_name,
         tone_url: alarm.tone_url,
-      },
+        created_by: alarm.created_by,
+        required_taps: alarm.required_taps || 1
+      }
     });
 
     // 4. Send FCM push to all member devices (Layer 2 — offline fallback)
@@ -123,8 +125,10 @@ Deno.serve(async (req) => {
           type: "alarm-ring",
           alarm_id: String(alarm.id),
           group_id: String(alarm.group_id),
-          alarm_time: String(alarm.alarm_time),
           tone_name: alarm.tone_name || "Default",
+          tone_url: alarm.tone_url || "",
+          created_by: String(alarm.created_by || ""),
+          required_taps: String(alarm.required_taps || 1),
         },
         android: {
           priority: "high",
