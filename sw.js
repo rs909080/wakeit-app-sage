@@ -5,7 +5,7 @@
    OneSignal runs in its own isolated scope (/push/onesignal/).
 ================================================ */
 
-const CACHE_NAME = 'wakeit-v29'; // v29 = cache Supabase Storage public tones for offline
+const CACHE_NAME = 'wakeit-v44'; // v29 = cache Supabase Storage public tones for offline
 const ASSETS = [
   '/manifest.json',
   '/icon-192.png',

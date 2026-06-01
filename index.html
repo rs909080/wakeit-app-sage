@@ -1733,6 +1733,38 @@
       margin-top: 4px;
     }
 
+    .tap-progress-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tap-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      transition: all 0.2s ease;
+    }
+
+    .tap-dot.filled {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(10, 132, 255, 0.5);
+    }
+
+    .dismiss-instruction {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      text-align: center;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
     .plan-features {
       list-style: none;
       margin: var(--space-4) 0;
@@ -3662,24 +3694,30 @@
           <div class="ringing-glow-ring"
             style="width:360px;height:360px;top:calc(50% - 290px);left:calc(50% - 180px);animation-delay:1.2s;"></div>
 
-          <div style="display:flex; flex-direction:column; align-items:center; padding-top:60px; width:100%;">
+          <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:16px; padding-top:28px; z-index:1;">
             <div class="alarm-bell" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="bell" class="lucide-icon" style="width:36px; height:36px; color:#fff;"></i></div>
             <div class="alarm-time-display" id="ringing-time">07:30 AM</div>
             <div class="alarm-group-label" id="ringing-group-label">Ringing for: Your Group</div>
-          </div>
 
-          <!-- Wake Status Buttons -->
-          <div class="wake-status-title">Are you awake?</div>
-          <div class="wake-status-btns">
-            <button class="wake-btn wake-btn-awake" id="btn-i-am-awake" onclick="recordWakeAttempt('awake')">
-              <span class="wake-btn-icon" style="display:flex; align-items:center; justify-content:center; height:36px;"><i data-lucide="sun" class="lucide-icon" style="width:28px; height:28px;"></i></span>
-              <span class="wake-btn-label">I'm Awake</span>
-              <span class="wake-attempt-count" id="wake-awake-count"></span>
+            <!-- Instruction: rendered by initAlarmRinging() -->
+            <div class="dismiss-instruction" id="ringing-dismiss-instruction">
+              Tap <strong id="ringing-taps-required">1</strong> time to dismiss
+            </div>
+
+            <!-- Animated progress dots: rendered by initAlarmRinging() -->
+            <div class="tap-progress-dots" id="ringing-tap-dots"></div>
+
+            <!-- Hero "I'm Awake" button -->
+            <button class="wake-btn-hero" id="btn-i-am-awake" onclick="recordWakeAttempt('awake')">
+              <span class="wake-btn-hero-icon">🌞</span>
+              <span class="wake-btn-hero-label">I'm Awake</span>
+              <span class="wake-btn-hero-sub" id="wake-awake-count"></span>
             </button>
-            <button class="wake-btn wake-btn-sleeping" id="btn-still-sleeping" onclick="recordWakeAttempt('sleeping')">
-              <span class="wake-btn-icon" style="display:flex; align-items:center; justify-content:center; height:36px;"><i data-lucide="moon" class="lucide-icon" style="width:28px; height:28px;"></i></span>
-              <span class="wake-btn-label">Still Sleeping</span>
-              <span class="wake-attempt-count" id="wake-sleeping-count"></span>
+
+            <!-- Secondary "Still Sleeping" button -->
+            <button class="wake-btn-secondary" id="btn-still-sleeping" onclick="recordWakeAttempt('sleeping')">
+              <i data-lucide="moon" class="lucide-icon" style="width:18px;height:18px;color:rgba(255,149,0,0.9);"></i>
+              <span class="wake-btn-secondary-label">Still Sleeping</span>
             </button>
           </div>
 
@@ -3980,6 +4018,7 @@
         scheduledAlarmIds: new Set(), // dedup: don't schedule the same alarm twice
         wakeStatuses: {},
         ownedGroupIds: new Set(), // FEATURE 2: group IDs where this user is the creator (alarm never rings)
+        localWakeTapCount: 0,      // CLIENT-SIDE tap counter — avoids async DB race conditions
         user: null,        // set by auth listener
         profile: null      // set by auth listener
       };
@@ -6664,73 +6703,36 @@
 
       async function initAlarmRinging() {
         let alarm = AppState.ringingAlarm;
-
-        // COLD-START FIX: If opened via push notification with no in-memory alarm,
-        // find the most recent active alarm for this user's groups from Supabase.
+        
+        // Ensure alarm is valid
         if (!alarm) {
+          console.warn('[Wakeit] initAlarmRinging called but AppState.ringingAlarm is null.');
+          return;
+        }
+
+        const uid = AppState.user?.id;
+
+        // ── STAGE 2b: Cold-Start / Direct Routing Safety Check ──
+        if (alarm && uid) {
           try {
-            const uid = getCurrentUserId();
-            if (uid) {
-              const { data: memberships } = await db.from('group_members')
-                .select('group_id').eq('user_id', uid);
-              const groupIds = (memberships || []).map(m => m.group_id);
-              if (groupIds.length) {
-                // Find alarms that fired in the last 15 minutes and are still active
-                const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-                const { data: recentAlarms } = await db.from('alarms')
-                  .select('*').in('group_id', groupIds)
-                  .eq('is_active', true)
-                  .gte('alarm_time', cutoff)
-                  .lte('alarm_time', new Date().toISOString())
-                  .order('alarm_time', { ascending: false })
-                  .limit(1);
-                if (recentAlarms?.[0]) {
-                  alarm = recentAlarms[0];
-
-                  // FEATURE 2: Skip if this user is the group owner — always do a live DB check
-                  let isOwner = AppState.ownedGroupIds.has(alarm.group_id) ||
-                                (alarm.created_by && alarm.created_by === uid);
-                  if (!isOwner) {
-                    // Always verify against DB to be safe (works on cold-start too)
-                    try {
-                      const { data: grpData } = await db.from('groups')
-                        .select('owner_id').eq('id', alarm.group_id).single();
-                      isOwner = (grpData?.owner_id === uid);
-                      if (isOwner) AppState.ownedGroupIds.add(alarm.group_id);
-                    } catch (ownerErr) {
-                      console.warn('[Wakeit] owner check failed:', ownerErr);
-                    }
-                  }
-                  if (isOwner) {
-                    console.log('[Wakeit] Cold-start skip — user is owner of group:', alarm.group_id);
-                    navigate('#/home');
-                    return;
-                  }
-
-                  AppState.ringingAlarm = alarm;
-
-                  // Load the group into AppState so dismiss works correctly
-                  if (!AppState.currentGroup) {
-                    const { data: group } = await db.from('groups')
-                      .select('*').eq('id', alarm.group_id).single();
-                    if (group) AppState.currentGroup = group;
-                  }
-
-                  // Start sound + vibration (cold start didn't go through triggerAlarm)
-                  stopAlarmAudio(); // ensure clean state
-                  if (alarm.tone_url) {
-                    await playAlarmAudio(alarm.tone_url);
-                  } else {
-                    playDefaultBeep();
-                  }
-                  startAlarmVibration();
-                }
-              }
+            const { data: existingStatus } = await db.from('alarm_wake_status')
+              .select('status')
+              .eq('alarm_id', alarm.id)
+              .eq('user_id', uid)
+              .maybeSingle();
+            if (existingStatus && (existingStatus.status === 'awake' || existingStatus.status === 'sleeping')) {
+              console.log('[Wakeit] initAlarmRinging — user already responded, redirecting home:', alarm.id);
+              stopAlarmAudio();
+              navigate('#/home');
+              return;
             }
-          } catch (e) {
-            console.warn('[Wakeit] cold-start alarm lookup failed:', e);
+          } catch (statusErr) {
+            console.warn('[Wakeit] initAlarmRinging status check failed:', statusErr);
           }
         }
+
+        const alarmId = String(alarm.id);
+        const reqTaps = parseInt(alarm.required_taps) || 1;
 
         // Update time display
         const timeEl = document.getElementById('ringing-time');
@@ -6746,12 +6748,45 @@
           groupLabelEl.textContent = 'Ringing for: ' + (g?.name || 'Your Group');
         }
 
-        // Reset reason cards to pristine state
-        document.querySelectorAll('.reason-card').forEach(c => c.classList.remove('selected'));
-        const otherInput = document.getElementById('other-reason-input');
-        const otherDone = document.getElementById('other-reason-done');
-        if (otherInput) { otherInput.style.display = 'none'; otherInput.value = ''; }
-        if (otherDone) otherDone.style.display = 'none';
+        // Reset local tap counter whenever alarm ringing screen loads / reloads
+        AppState.localWakeTapCount = 0;
+
+        // Seed the local counter from DB so a page reload doesn't lose progress
+        if (uid && alarmId) {
+          try {
+            const { data: existingAwakeData } = await db.from('wake_attempts')
+              .select('id')
+              .eq('alarm_id', alarmId)
+              .eq('user_id', uid)
+              .eq('status', 'awake');
+            
+            if (existingAwakeData) {
+              AppState.localWakeTapCount = existingAwakeData.length;
+            }
+          } catch (seedErr) {
+            console.warn('[Wakeit] Failed to seed localWakeTapCount:', seedErr);
+          }
+        }
+
+        // Render instruction and progress dots
+        const instructionEl = document.getElementById('ringing-dismiss-instruction');
+        const tapsDisplay = document.getElementById('ringing-taps-required');
+        const dotsContainer = document.getElementById('ringing-tap-dots');
+        
+        if (instructionEl && tapsDisplay && dotsContainer) {
+          tapsDisplay.textContent = reqTaps;
+          instructionEl.style.display = reqTaps > 1 ? 'block' : 'none';
+          
+          dotsContainer.innerHTML = '';
+          if (reqTaps > 1) {
+            for (let i = 0; i < reqTaps; i++) {
+              const dot = document.createElement('span');
+              dot.className = 'tap-dot' + (i < AppState.localWakeTapCount ? ' filled' : '');
+              dot.id = `tap-dot-${i}`;
+              dotsContainer.appendChild(dot);
+            }
+          }
+        }
 
         // Subscribe to this user's own wake status via Realtime
         if (alarm) subscribeToMyWakeStatus(alarm.id);
@@ -6771,6 +6806,41 @@
        * audio and navigates home.
        */
       async function recordWakeAttempt(status) {
+        let alarm = AppState.ringingAlarm;
+        const reqTaps = alarm ? (parseInt(alarm.required_taps) || 1) : 1;
+
+        if (status === 'awake') {
+          // ---- INSTANT local increment — no await, no race condition ----
+          AppState.localWakeTapCount += 1;
+          const currentTap = AppState.localWakeTapCount;
+
+          // --- Fill the corresponding progress dot (index = currentTap - 1) ---
+          if (reqTaps > 1) {
+            const dot = document.getElementById(`tap-dot-${currentTap - 1}`);
+            if (dot) dot.classList.add('filled');
+            
+            // Optional: Light haptic feedback for each tap
+            if (navigator.vibrate) navigator.vibrate(50);
+          }
+
+          if (currentTap < reqTaps) {
+            // Not enough taps yet -> insert attempt in background, keep ringing
+            const uid = AppState.user?.id;
+            if (uid && alarm?.id) {
+              db.from('wake_attempts').insert([{
+                alarm_id: String(alarm.id),
+                user_id: uid,
+                status: 'awake'
+              }]).then(() => {
+                loadRingingAttemptCounts(String(alarm.id));
+              });
+            }
+            return; 
+          }
+        }
+
+        // --- FINAL DISMISSAL REACHED ---
+        
         // Stop alarm immediately — do this first for responsiveness
         stopAlarmAudio();
 
@@ -6810,23 +6880,27 @@
         const uid = getCurrentUserId();
         if (!uid || !alarmId) return;
         try {
-          const { data: attempts } = await db.from('wake_attempts')
+          const { data } = await db.from('wake_attempts')
             .select('status')
             .eq('alarm_id', alarmId)
             .eq('user_id', uid);
+          const attempts = data || [];
           const awakeCount = (attempts || []).filter(a => a.status === 'awake').length;
           const sleepCount = (attempts || []).filter(a => a.status === 'sleeping').length;
+
+          // Use max of DB count and local counter — guards against write lag making UI go backwards
+          const displayCount = Math.max(awakeCount, AppState.localWakeTapCount);
+
           const awakeEl = document.getElementById('wake-awake-count');
           const sleepEl = document.getElementById('wake-sleeping-count');
-          if (awakeEl) awakeEl.textContent = awakeCount > 0 ? `Tapped ${awakeCount} time${awakeCount !== 1 ? 's' : ''}` : '';
-          if (sleepEl) sleepEl.textContent = sleepCount > 0 ? `Tapped ${sleepCount} time${sleepCount !== 1 ? 's' : ''}` : '';
+          if (awakeEl) awakeEl.textContent = displayCount > 0 ? `Tapped ${displayCount} time${displayCount !== 1 ? 's' : ''}` : '';
+          if (sleepEl) sleepEl.textContent = '';
         } catch (e) { /* non-critical */ }
       }
 
       /**
        * Subscribes to new wake_attempts INSERTs for this alarmId.
        * Used on the ringing screen so members' counts update live.
-       * (No auto-dismiss on this new model — user explicitly taps.)
        */
       function subscribeToMyWakeStatus(alarmId) {
         if (wakeChannel) wakeChannel.unsubscribe();
