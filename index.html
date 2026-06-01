@@ -6530,6 +6530,41 @@
           }
         }
 
+        // ── STAGE 4: Database Active Status Check (Prevents deleted/disabled alarms from ringing) ──
+        if (alarm?.id) {
+          try {
+            const { data: dbAlarm, error: dbAlarmErr } = await db.from('alarms')
+              .select('is_active')
+              .eq('id', alarm.id)
+              .single();
+            if (dbAlarmErr || !dbAlarm || !dbAlarm.is_active) {
+              console.log('[Wakeit] Skipping alarm ring — alarm was disabled or deleted in DB:', alarm.id);
+              return;
+            }
+          } catch (e) {
+            console.warn('[Wakeit] alarm active verification failed, proceeding offline fallback:', e);
+          }
+        }
+
+        // ── STAGE 5: Alarm Response Check (Prevents re-triggering after member already dismissed) ──
+        // If this user already tapped "I'm Awake" or "Still Sleeping" for this alarm,
+        // their alarm_wake_status row will exist — skip ringing entirely.
+        if (alarm?.id && uid) {
+          try {
+            const { data: wakeStatus, error: wakeStatusErr } = await db.from('alarm_wake_status')
+              .select('status')
+              .eq('alarm_id', alarm.id)
+              .eq('user_id', uid)
+              .maybeSingle();
+            if (!wakeStatusErr && wakeStatus && (wakeStatus.status === 'awake' || wakeStatus.status === 'sleeping')) {
+              console.log(`[Wakeit] Skipping alarm ring — user already responded (${wakeStatus.status}):`, alarm.id);
+              return;
+            }
+          } catch (e) {
+            console.warn('[Wakeit] alarm response status check failed, proceeding with ring:', e);
+          }
+        }
+
         AppState.ringingAlarm = alarm;
 
         // Stop any previous audio/vibration before starting new ones
