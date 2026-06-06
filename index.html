@@ -4019,7 +4019,13 @@
       ================================================ */
       function openModal(id) {
         const el = document.getElementById(id);
-        if (el) { el.classList.add('open'); window.refreshIcons && window.refreshIcons(); }
+        if (el) {
+          el.classList.add('open');
+          window.refreshIcons && window.refreshIcons();
+          if (id === 'modal-plans' && typeof updatePlansModalUI === 'function') {
+            updatePlansModalUI();
+          }
+        }
       }
 
       function closeModal(id) {
@@ -4743,15 +4749,23 @@
             localStorage.setItem('wakeit_plan_type', 'free_trial');
             localStorage.setItem('wakeit_plan_start', Date.now().toString());
 
+            // Initialize planVerification in AppState immediately to avoid race condition
+            AppState.planVerification = {
+              type: 'free_trial',
+              active: true,
+              expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+            };
+
             // Fire-and-forget profile upsert — don't block navigation
             if (data.user) {
               db.from('profiles').upsert({
                 id: data.user.id,
                 name,
-                email,
-                plan_type: 'free_trial'
-              }, { onConflict: 'id' }).then(({ error: pErr }) => {
+                email
+              }, { onConflict: 'id' }).then(async ({ error: pErr }) => {
                 if (pErr) console.warn('[Wakeit] profile upsert:', pErr.message);
+                // After profile is created, call activate_free_trial
+                await db.rpc('activate_free_trial');
               });
             }
 
@@ -7792,7 +7806,131 @@
       let planCurrencyIsUSD = true;
 
       /** Activates a plan (called from plans modal buttons) */
+      async function activatePlan(planType) {
+        closeModal('modal-plans');
+        if (planType === 'free_trial') {
+          await grantFreeTrial();
+          return;
+        }
 
+        // Paid plans — open Razorpay
+        const price = PLAN_PRICES[planType];
+        if (!price) { showToast('Unknown plan type', 'error'); return; }
+
+        const userEmail = AppState.user?.email || '';
+        const options = {
+          key: RAZORPAY_KEY,
+          amount: price.amount,
+          currency: 'USD',
+          name: 'Wakeit',
+          description: price.desc,
+          image: '/icon-192.png',
+          prefill: { email: userEmail },
+          theme: { color: '#C84BFF' },
+          modal: {
+            ondismiss: () => {
+              showToast('Payment cancelled.', 'info');
+              openModal('modal-plans');
+            }
+          },
+          handler: async (response) => {
+            await persistPlan(planType, response.razorpay_payment_id || '');
+            const labels = { member: 'Member', admin: 'Admin', organisation: 'Organisation' };
+            showToast(`${labels[planType] || planType} plan activated! `, 'success');
+            navigate('#/home');
+          }
+        };
+
+        if (!window.Razorpay) {
+          showToast('Payment is loading, please try again in 2 seconds.', 'warning');
+          return;
+        }
+
+        try {
+          new Razorpay(options).open();
+        } catch (e) {
+          showToast('Payment system unavailable. Please try again.', 'error');
+          openModal('modal-plans');
+        }
+      }
+
+      async function grantFreeTrial() {
+        try {
+          const { data, error } = await db.rpc('activate_free_trial');
+          if (error) throw error;
+          if (data && data.error) {
+            showToast(data.error, 'error');
+            openModal('modal-plans');
+            return;
+          }
+          await verifyPlanStatus();
+          showToast(' Free trial started! 3 days of full access.', 'success');
+          navigate('#/home');
+        } catch(e) {
+          showToast('Could not activate free trial.', 'error');
+        }
+      }
+
+      async function persistPlan(planType, paymentId) {
+        const uid = getCurrentUserId();
+        removeExpiryBanner();
+        if (uid) {
+          try {
+            await db.from('profiles').update({
+              plan_type: planType,
+              plan_started_at: new Date().toISOString(),
+              rzp_payment_id: paymentId || null,
+              plan_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+            }).eq('id', uid);
+          } catch (e) {
+            console.warn('[Wakeit] Could not persist plan to DB:', e);
+          }
+        }
+        await verifyPlanStatus();
+        updateSettingsPlanCard();
+      }
+
+      function updatePlansModalUI() {
+        const freeTrialBtn = document.querySelector('#modal-plans button[onclick*="free_trial"]');
+        if (!freeTrialBtn) return;
+        
+        const planType = getPlanType();
+        const active = isPlanActive();
+        
+        // If they already have an active plan or have used/are using free trial
+        const hasUsedTrial = planType === 'free_trial' || localStorage.getItem('wakeit_plan_type') === 'free_trial';
+        
+        if (hasUsedTrial) {
+          if (active && planType === 'free_trial') {
+            freeTrialBtn.innerHTML = '<i data-lucide="check" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Active Trial';
+            freeTrialBtn.setAttribute('disabled', 'true');
+            freeTrialBtn.style.opacity = '0.6';
+            freeTrialBtn.style.cursor = 'not-allowed';
+            freeTrialBtn.setAttribute('onclick', '');
+          } else {
+            freeTrialBtn.innerHTML = '<i data-lucide="lock" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Trial Expired / Used';
+            freeTrialBtn.setAttribute('disabled', 'true');
+            freeTrialBtn.style.opacity = '0.6';
+            freeTrialBtn.style.cursor = 'not-allowed';
+            freeTrialBtn.setAttribute('onclick', '');
+          }
+        } else if (planType && planType !== 'free_trial' && active) {
+          // If they have a paid plan, free trial is locked/unnecessary
+          freeTrialBtn.innerHTML = '<i data-lucide="lock" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Locked';
+          freeTrialBtn.setAttribute('disabled', 'true');
+          freeTrialBtn.style.opacity = '0.6';
+          freeTrialBtn.style.cursor = 'not-allowed';
+          freeTrialBtn.setAttribute('onclick', '');
+        } else {
+          // Restore default button state if trial is available
+          freeTrialBtn.innerHTML = '<i data-lucide="zap" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Start Free Trial';
+          freeTrialBtn.removeAttribute('disabled');
+          freeTrialBtn.style.opacity = '';
+          freeTrialBtn.style.cursor = '';
+          freeTrialBtn.setAttribute('onclick', "activatePlan('free_trial')");
+        }
+        if (window.lucide) window.lucide.createIcons();
+      }
 
       /* ---- Paywall screen init (legacy screen still works) ---- */
       function initPaywall() {

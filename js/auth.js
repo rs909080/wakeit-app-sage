@@ -159,6 +159,13 @@ function initLogin() {
             localStorage.setItem('wakeit_plan_type', 'free_trial');
             localStorage.setItem('wakeit_plan_start', Date.now().toString());
 
+            // Initialize planVerification in AppState immediately to avoid race condition
+            AppState.planVerification = {
+              type: 'free_trial',
+              active: true,
+              expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+            };
+
             // Fire-and-forget profile upsert — don't block navigation
             if (data.user) {
               db.from('profiles').upsert({
