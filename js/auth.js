@@ -324,8 +324,11 @@ function getUserPlanLimits(planType) {
 window.verifyPlanStatus = async function() {
   if (!AppState.user) return { type: null, active: false };
   try {
-    const { data: { session } } = await db.auth.getSession();
-    const token = session?.access_token;
+    let token = AppState.session?.access_token;
+    if (!token) {
+      const { data: { session } } = await db.auth.getSession();
+      token = session?.access_token;
+    }
     const { data, error } = await db.functions.invoke('verify-plan', {
       headers: {
         Authorization: token ? `Bearer ${token}` : undefined
@@ -346,7 +349,57 @@ window.verifyPlanStatus = async function() {
     
     return AppState.planVerification;
   } catch (e) {
-    console.warn('[Wakeit] verify-plan error:', e);
+    console.warn('[Wakeit] verify-plan error, falling back to direct profiles query:', e);
+    
+    // Direct profiles query fallback
+    try {
+      const uid = AppState.user.id;
+      const { data: prof, error: profErr } = await db.from('profiles')
+        .select('plan_type, plan_expires_at, plan_started_at')
+        .eq('id', uid)
+        .single();
+        
+      if (!profErr && prof) {
+        const now = new Date();
+        let expiresAt = prof.plan_expires_at ? new Date(prof.plan_expires_at) : null;
+        let isExpired = false;
+        
+        if (prof.plan_type === 'free_trial') {
+          if (!expiresAt) {
+            const start = prof.plan_started_at ? new Date(prof.plan_started_at) : now;
+            expiresAt = new Date(start.getTime() + 3 * 24 * 60 * 60 * 1000);
+          }
+          isExpired = now > expiresAt;
+        } else if (prof.plan_type === 'none' || !prof.plan_type) {
+          isExpired = true;
+        } else {
+          if (expiresAt) {
+            isExpired = now > expiresAt;
+          } else {
+            isExpired = false;
+          }
+        }
+        
+        AppState.planVerification = {
+          type: prof.plan_type,
+          active: !isExpired,
+          expiresAt: expiresAt ? expiresAt.toISOString() : null
+        };
+        
+        // Sync to localStorage
+        if (prof.plan_type) {
+          localStorage.setItem('wakeit_plan_type', prof.plan_type);
+        }
+        if (prof.plan_started_at) {
+          localStorage.setItem('wakeit_plan_start', new Date(prof.plan_started_at).getTime().toString());
+        }
+        
+        return AppState.planVerification;
+      }
+    } catch (fallbackErr) {
+      console.error('[Wakeit] plan verification fallback failed:', fallbackErr);
+    }
+    
     return AppState.planVerification || { type: null, active: false };
   }
 };
@@ -567,6 +620,7 @@ db.auth.onAuthStateChange((event, session) => {
   }
 
   AppState.user = session ? session.user : null;
+  AppState.session = session;
 
   // Resolve the boot gate — appInit() is waiting for this
   if (typeof _authReadyResolve === 'function') { _authReadyResolve(); _authReadyResolve = null; }
