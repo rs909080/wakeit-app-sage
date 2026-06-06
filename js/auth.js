@@ -393,14 +393,18 @@ window.verifyPlanStatus = async function() {
         if (prof.plan_started_at) {
           localStorage.setItem('wakeit_plan_start', new Date(prof.plan_started_at).getTime().toString());
         }
+        localStorage.setItem('wakeit_plan_active', !isExpired ? 'true' : 'false');
         
         return AppState.planVerification;
       }
     } catch (fallbackErr) {
-      console.error('[Wakeit] plan verification fallback failed:', fallbackErr);
+      console.error('[Wakeit] plan verification fallback failed (offline?):', fallbackErr);
     }
     
-    return AppState.planVerification || { type: null, active: false };
+    // Offline fallback: load from cache
+    const cachedActive = localStorage.getItem('wakeit_plan_active');
+    const cachedType = localStorage.getItem('wakeit_plan_type');
+    return AppState.planVerification || { type: cachedType, active: cachedActive === 'true' };
   }
 };
 
@@ -411,7 +415,10 @@ function getPlanType() {
 function isPlanActive() {
   if (AppState.planVerification?.active) return true;
   
-  // Fallback for free trial
+  // Offline fallback
+  if (localStorage.getItem('wakeit_plan_active') === 'true') return true;
+
+  // Fallback for free trial locally based on start date
   const planType = getPlanType();
   if (planType === 'free_trial') {
     const planStart = parseInt(localStorage.getItem('wakeit_plan_start') || '0', 10);
@@ -630,6 +637,9 @@ db.auth.onAuthStateChange((event, session) => {
     // outside of the main onAuthStateChange event flow to avoid deadlocks.
     if (typeof handleUserSessionChange === 'function') {
       handleUserSessionChange(event, session);
+    }
+    if (typeof syncOfflineWakeQueue === 'function') {
+      syncOfflineWakeQueue();
     }
   } else {
     AppState.profile = null;

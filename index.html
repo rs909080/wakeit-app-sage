@@ -6905,7 +6905,8 @@
         // Reset local tap counter whenever alarm ringing screen loads / reloads
         AppState.localWakeTapCount = 0;
 
-        // Seed the local counter from DB so a page reload doesn't lose progress
+        // Seed the local counter from DB so a page reload doesn't lose progress.
+        // Offline fallback: use the offline queue length for this alarm as the seed.
         if (uid && alarmId) {
           try {
             const { data: existingAwakeData } = await db.from('wake_attempts')
@@ -6918,9 +6919,27 @@
               AppState.localWakeTapCount = existingAwakeData.length;
             }
           } catch (seedErr) {
-            console.warn('[Wakeit] Failed to seed localWakeTapCount:', seedErr);
+            // Offline: seed from queued offline attempts for this alarm
+            console.warn('[Wakeit] Failed to seed localWakeTapCount (offline fallback):', seedErr);
+            try {
+              const offlineQueue = JSON.parse(localStorage.getItem('wakeit_offline_wake_queue') || '[]');
+              const seeded = offlineQueue.filter(q => q.alarm_id === alarmId && q.user_id === uid && q.status === 'awake').length;
+              AppState.localWakeTapCount = seeded;
+            } catch (_) { /* ignore */ }
           }
         }
+
+        // ── Immediately update the sub-label with the real reqTaps value ──
+        // This fixes the bug where the hardcoded HTML showed "Tapped 0/1 times"
+        // regardless of the admin's configured tap count.
+        const awakeCountEl = document.getElementById('wake-awake-count');
+        if (awakeCountEl) awakeCountEl.textContent = `Tapped ${AppState.localWakeTapCount}/${reqTaps} times`;
+
+        // Re-enable buttons (in case they were disabled from a previous alarm session)
+        const btnAwake = document.getElementById('btn-i-am-awake');
+        const btnSleep = document.getElementById('btn-still-sleeping');
+        if (btnAwake) btnAwake.removeAttribute('disabled');
+        if (btnSleep) btnSleep.removeAttribute('disabled');
 
         // Render instruction and progress dots
         const instructionEl = document.getElementById('ringing-dismiss-instruction');
@@ -6930,7 +6949,8 @@
         if (instructionEl && tapsDisplay && dotsContainer) {
           tapsDisplay.textContent = reqTaps;
           instructionEl.style.display = reqTaps > 1 ? 'block' : 'none';
-          
+          // Show dots container only when reqTaps > 1
+          dotsContainer.style.display = reqTaps > 1 ? 'flex' : 'none';
           dotsContainer.innerHTML = '';
           if (reqTaps > 1) {
             for (let i = 0; i < reqTaps; i++) {
@@ -6990,17 +7010,24 @@
             if (navigator.vibrate) navigator.vibrate(50);
           }
 
+          // Update sub-label immediately after each tap
+          const awakeCountEl = document.getElementById('wake-awake-count');
+          if (awakeCountEl) awakeCountEl.textContent = `Tapped ${currentTap}/${reqTaps} times`;
+
           if (currentTap < reqTaps) {
-            // Not enough taps yet -> insert attempt in background, keep ringing
+            // Not enough taps yet -> queue attempt in background, keep ringing
             const uid = AppState.user?.id;
             if (uid && alarm?.id) {
-              // SQL Injection Safety: We are using Supabase JS client which uses parameterized queries, preventing SQL injection.
-              db.from('wake_attempts').insert([{
+              const attemptPayload = {
                 alarm_id: String(alarm.id),
                 user_id: uid,
                 status: 'awake'
-              }]).then(() => {
+              };
+              // Fire and forget — fall back to offline queue on failure
+              db.from('wake_attempts').insert([attemptPayload]).then(() => {
                 loadRingingAttemptCounts(String(alarm.id));
+              }).catch(() => {
+                queueOfflineWakeAttempt({ ...attemptPayload, timestamp: Date.now() });
               });
             }
             return; 
@@ -7012,41 +7039,133 @@
         }
 
         // --- FINAL DISMISSAL REACHED ---
-        
-        // Stop alarm immediately — do this first for responsiveness
+
+        // 1. Disable buttons IMMEDIATELY to prevent double-tap
+        const btnAwake = document.getElementById('btn-i-am-awake');
+        const btnSleep = document.getElementById('btn-still-sleeping');
+        if (btnAwake) btnAwake.setAttribute('disabled', 'true');
+        if (btnSleep) btnSleep.setAttribute('disabled', 'true');
+
+        // 2. Stop alarm immediately — synchronous, no await
         stopAlarmAudio();
+        if (navigator.vibrate) navigator.vibrate(0); // cancel any residual vibration
 
+        // 3. Null out ringingAlarm so re-navigation won't re-init
+        const alarmSnapshot = alarm;
+        AppState.ringingAlarm = null;
+
+        // 4. Navigate home immediately — don't wait for DB
+        navigate('#/home');
+        showToast(status === 'awake' ? 'Good morning! 🌅' : 'Rest up — alarm noted', 'success');
+
+        // 5. Persist to DB in background (offline-safe)
         const uid = getCurrentUserId();
-
-        if (uid && alarm?.id) {
+        if (uid && alarmSnapshot?.id) {
+          const finalPayload = {
+            alarm_id: String(alarmSnapshot.id),
+            user_id: uid,
+            status: status,
+            timestamp: Date.now()
+          };
           try {
-            // Count prior attempts for this alarm+user
+            // Count prior attempts for attempt_number
             const { count } = await db.from('wake_attempts')
               .select('*', { count: 'exact', head: true })
-              .eq('alarm_id', alarm.id)
+              .eq('alarm_id', alarmSnapshot.id)
               .eq('user_id', uid);
 
             const attemptNumber = (count || 0) + 1;
 
             await db.from('wake_attempts').insert({
-              alarm_id: alarm.id,
+              alarm_id: alarmSnapshot.id,
               user_id: uid,
               status: status,
               attempt_number: attemptNumber
             });
 
-            // Update alarm_wake_status so it doesn't ring again
-            await db.from('alarm_wake_status').update({
-              status: status
-            }).eq('alarm_id', alarm.id).eq('user_id', uid);
+            // Upsert alarm_wake_status so it doesn't ring again and admin sees final status
+            await db.from('alarm_wake_status').upsert({
+              alarm_id: alarmSnapshot.id,
+              user_id: uid,
+              group_id: alarmSnapshot.group_id,
+              status: status,
+              responded_at: new Date().toISOString()
+            }, { onConflict: 'alarm_id,user_id' });
+
           } catch (e) {
-            console.warn('[Wakeit] Failed to record wake attempt:', e);
+            console.warn('[Wakeit] DB write failed (offline), queuing for sync:', e);
+            // Queue the final dismissal for sync when back online
+            queueOfflineWakeAttempt(finalPayload);
+          }
+        }
+      }
+      }
+
+      /* ------ S-13b Offline Queue Sync ------ */
+      function queueOfflineWakeAttempt(payload) {
+        try {
+          const queue = JSON.parse(localStorage.getItem('wakeit_offline_wake_queue') || '[]');
+          queue.push(payload);
+          localStorage.setItem('wakeit_offline_wake_queue', JSON.stringify(queue));
+          console.log('[Wakeit] Wake attempt queued offline:', payload);
+        } catch (e) {
+          console.warn('[Wakeit] Failed to queue offline attempt:', e);
+        }
+      }
+
+      async function syncOfflineWakeQueue() {
+        if (!navigator.onLine) return;
+        
+        let queue = [];
+        try {
+          queue = JSON.parse(localStorage.getItem('wakeit_offline_wake_queue') || '[]');
+        } catch (e) { return; }
+
+        if (queue.length === 0) return;
+
+        console.log(`[Wakeit] Syncing ${queue.length} offline wake attempts...`);
+        let failed = [];
+
+        for (const attempt of queue) {
+          try {
+            // Count prior attempts to set attempt_number
+            const { count } = await db.from('wake_attempts')
+              .select('*', { count: 'exact', head: true })
+              .eq('alarm_id', attempt.alarm_id)
+              .eq('user_id', attempt.user_id);
+            const attemptNumber = (count || 0) + 1;
+
+            await db.from('wake_attempts').insert({
+              alarm_id: attempt.alarm_id,
+              user_id: attempt.user_id,
+              status: attempt.status,
+              attempt_number: attemptNumber
+            });
+
+            // Upsert alarm_wake_status (only strictly necessary for final dismissal, but safe to always do)
+            await db.from('alarm_wake_status').upsert({
+              alarm_id: attempt.alarm_id,
+              user_id: attempt.user_id,
+              status: attempt.status,
+              responded_at: new Date(attempt.timestamp || Date.now()).toISOString()
+            }, { onConflict: 'alarm_id,user_id' });
+
+          } catch (err) {
+            console.warn('[Wakeit] Failed to sync offline attempt:', attempt, err);
+            failed.push(attempt);
           }
         }
 
-        navigate('#/home');
-        showToast(status === 'awake' ? 'Good morning! ' : 'Rest up  — alarm noted', 'success');
+        // Keep any that failed to sync, clear the rest
+        if (failed.length > 0) {
+          localStorage.setItem('wakeit_offline_wake_queue', JSON.stringify(failed));
+        } else {
+          localStorage.removeItem('wakeit_offline_wake_queue');
+          console.log('[Wakeit] Offline wake queue synced successfully.');
+        }
       }
+
+      window.addEventListener('online', syncOfflineWakeQueue);
 
       /**
        * Loads the attempt counts for the current alarm so the ringing screen
@@ -7723,7 +7842,10 @@
       function isPlanActive() {
         if (AppState.planVerification?.active) return true;
         
-        // Fallback for free trial
+        // Offline fallback
+        if (localStorage.getItem('wakeit_plan_active') === 'true') return true;
+
+        // Fallback for free trial locally based on start date
         const planType = getPlanType();
         if (planType === 'free_trial') {
           const planStart = parseInt(localStorage.getItem('wakeit_plan_start') || '0', 10);

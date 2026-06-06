@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     // 1. Fetch the alarm details
     const { data: alarm, error: alarmErr } = await supabaseAdmin
       .from("alarms")
-      .select("id, group_id, alarm_time, tone_name, tone_url, is_active")
+      .select("id, group_id, alarm_time, tone_name, tone_url, is_active, required_taps, created_by")
       .eq("id", alarm_id)
       .single();
 
