@@ -12,14 +12,21 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')
+    console.log('[VerifyPlan] Authorization header length:', authHeader ? authHeader.length : 0)
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { global: { headers: { Authorization: authHeader || '' } } }
     )
 
-    const { data: { user } } = await supabaseClient.auth.getUser()
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError) {
+      console.error('[VerifyPlan] auth.getUser() error:', authError.message)
+    }
     if (!user) {
+      console.error('[VerifyPlan] Unauthorized: user is null')
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 })
     }
 

@@ -4353,10 +4353,10 @@
           if (AppState.user) {
             // "On every screen navigation call a Supabase Edge Function"
             console.log('[Wakeit] Screen navigation: verifying plan via backend');
-            const status = await verifyPlanStatus();
+            await verifyPlanStatus();
             
-            if (PLAN_GATED.includes(hash) && !status.active) {
-              console.warn('[Wakeit] PLAN GATE blocked route:', hash, '— plan expired via backend');
+            if (PLAN_GATED.includes(hash) && !isPlanActive()) {
+              console.warn('[Wakeit] PLAN GATE blocked route:', hash, '— plan expired');
               showToast('Choose a plan to access Wakeit ', 'info');
               setTimeout(() => openModal('modal-plans'), 400);
               navigate('#/home');
@@ -4485,18 +4485,20 @@
         let planStatusStr = "Upgrade Plan";
         let planBtnTitle = "View pricing plans";
         let planBtnClass = "sidebar-upgrade-btn";
-        const planType = localStorage.getItem('wakeit_plan_type');
-        const planStart = parseInt(localStorage.getItem('wakeit_plan_start') || '0', 10);
+        const planType = getPlanType();
+        const active = isPlanActive();
 
         if (planType === 'member' || planType === 'admin' || planType === 'organisation') {
           const planLabels = { member: 'Member', admin: 'Admin', organisation: 'Organisation' };
-          planStatusStr = `${planLabels[planType]} Plan`;
-          planBtnTitle = "Manage your plan";
-          planBtnClass = "sidebar-upgrade-btn sidebar-plan-active";
+          planStatusStr = active ? `${planLabels[planType]} Plan` : 'Upgrade Plan';
+          planBtnTitle = active ? "Manage your plan" : "Your plan has expired";
+          planBtnClass = active ? "sidebar-upgrade-btn sidebar-plan-active" : "sidebar-upgrade-btn";
         } else if (planType === 'free_trial') {
-          const daysLeft = Math.max(0, 3 - Math.floor((Date.now() - planStart) / (1000 * 60 * 60 * 24)));
-          planStatusStr = daysLeft > 0 ? `Trial: ${daysLeft}d left` : 'Upgrade Plan';
-          planBtnTitle = daysLeft > 0 ? "Upgrade your plan" : "Your trial has expired";
+          const expires = AppState.planVerification?.expiresAt;
+          const daysLeft = expires ? Math.max(0, Math.ceil((new Date(expires) - new Date()) / (1000 * 60 * 60 * 24))) : 3;
+          planStatusStr = (active && daysLeft > 0) ? `Trial: ${daysLeft}d left` : 'Upgrade Plan';
+          planBtnTitle = (active && daysLeft > 0) ? "Upgrade your plan" : "Your trial has expired";
+          planBtnClass = (active && daysLeft > 0) ? "sidebar-upgrade-btn sidebar-plan-active" : "sidebar-upgrade-btn";
         }
 
         const planIcon = `<i data-lucide="zap" class="lucide-icon lucide-icon-sm icon-prefix"></i>`;
@@ -7663,7 +7665,7 @@
 
       /* Plan limits — enforced across group creation, join, alarm set */
       const PLAN_LIMITS = {
-        free_trial: { canCreate: true, maxGroups: 2, maxMembers: 10, maxAlarms: 5 },
+        free_trial: { canCreate: true, maxGroups: 5, maxMembers: 20, maxAlarms: 20 },
         member: { canCreate: false, maxGroups: 0, maxMembers: 0, maxAlarms: 0 },
         admin: { canCreate: true, maxGroups: 5, maxMembers: 20, maxAlarms: 20 },
         organisation: { canCreate: true, maxGroups: 10, maxMembers: 50, maxAlarms: 50 }
@@ -7672,9 +7674,26 @@
       window.verifyPlanStatus = async function() {
         if (!AppState.user) return { type: null, active: false };
         try {
-          const { data, error } = await db.functions.invoke('verify-plan');
+          const { data: { session } } = await db.auth.getSession();
+          const token = session?.access_token;
+          const { data, error } = await db.functions.invoke('verify-plan', {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined
+            }
+          });
           if (error) throw error;
+          
           AppState.planVerification = { type: data.plan_type, active: data.is_active, expiresAt: data.expired_at };
+          
+          // Sync to localStorage
+          if (data.plan_type) {
+            localStorage.setItem('wakeit_plan_type', data.plan_type);
+          }
+          if (data.expired_at) {
+            const planStart = new Date(data.expired_at).getTime() - (3 * 24 * 60 * 60 * 1000);
+            localStorage.setItem('wakeit_plan_start', planStart.toString());
+          }
+          
           return AppState.planVerification;
         } catch (e) {
           console.warn('[Wakeit] verify-plan error:', e);
@@ -7688,11 +7707,22 @@
       }
 
       function getPlanType() {
-        return AppState.planVerification?.type || null;
+        return AppState.planVerification?.type || localStorage.getItem('wakeit_plan_type') || null;
       }
 
       function isPlanActive() {
-        return AppState.planVerification?.active || false;
+        if (AppState.planVerification?.active) return true;
+        
+        // Fallback for free trial
+        const planType = getPlanType();
+        if (planType === 'free_trial') {
+          const planStart = parseInt(localStorage.getItem('wakeit_plan_start') || '0', 10);
+          if (planStart > 0) {
+            const DAYS_3 = 3 * 24 * 60 * 60 * 1000;
+            return (Date.now() - planStart) < DAYS_3;
+          }
+        }
+        return false;
       }
 
       function canCreateGroup() {

@@ -324,9 +324,26 @@ function getUserPlanLimits(planType) {
 window.verifyPlanStatus = async function() {
   if (!AppState.user) return { type: null, active: false };
   try {
-    const { data, error } = await db.functions.invoke('verify-plan');
+    const { data: { session } } = await db.auth.getSession();
+    const token = session?.access_token;
+    const { data, error } = await db.functions.invoke('verify-plan', {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : undefined
+      }
+    });
     if (error) throw error;
+    
     AppState.planVerification = { type: data.plan_type, active: data.is_active, expiresAt: data.expired_at };
+    
+    // Sync to localStorage
+    if (data.plan_type) {
+      localStorage.setItem('wakeit_plan_type', data.plan_type);
+    }
+    if (data.expired_at) {
+      const planStart = new Date(data.expired_at).getTime() - (3 * 24 * 60 * 60 * 1000);
+      localStorage.setItem('wakeit_plan_start', planStart.toString());
+    }
+    
     return AppState.planVerification;
   } catch (e) {
     console.warn('[Wakeit] verify-plan error:', e);
@@ -335,11 +352,22 @@ window.verifyPlanStatus = async function() {
 };
 
 function getPlanType() {
-  return AppState.planVerification?.type || null;
+  return AppState.planVerification?.type || localStorage.getItem('wakeit_plan_type') || null;
 }
 
 function isPlanActive() {
-  return AppState.planVerification?.active || false;
+  if (AppState.planVerification?.active) return true;
+  
+  // Fallback for free trial
+  const planType = getPlanType();
+  if (planType === 'free_trial') {
+    const planStart = parseInt(localStorage.getItem('wakeit_plan_start') || '0', 10);
+    if (planStart > 0) {
+      const DAYS_3 = 3 * 24 * 60 * 60 * 1000;
+      return (Date.now() - planStart) < DAYS_3;
+    }
+  }
+  return false;
 }
 
 function checkPlanExpiry() {
