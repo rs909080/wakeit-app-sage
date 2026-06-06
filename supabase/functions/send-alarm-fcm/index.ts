@@ -30,8 +30,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const rateLimitMap = new Map<string, { count: number, resetAt: number }>();
+function checkRateLimit(req: Request) {
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const now = Date.now();
+  let record = rateLimitMap.get(ip);
+  if (!record || record.resetAt < now) {
+    record = { count: 0, resetAt: now + 60000 };
+  }
+  record.count++;
+  rateLimitMap.set(ip, record);
+  return { allowed: record.count <= 20, remaining: Math.max(0, 20 - record.count) };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const rl = checkRateLimit(req);
+  if (!rl.allowed) {
+    return new Response("Too Many Requests", { status: 429, headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } });
+  }
 
   try {
     const { alarm_id, user_ids, group_id, title, body, type } = await req.json();
@@ -56,7 +73,7 @@ Deno.serve(async (req) => {
     if (targetUserIds.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: "No users to notify" }),
-        { headers: corsHeaders }
+        { headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } }
       );
     }
 
@@ -73,7 +90,7 @@ Deno.serve(async (req) => {
     if (tokens.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: "No FCM tokens found for these users" }),
-        { headers: corsHeaders }
+        { headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } }
       );
     }
 
@@ -118,13 +135,13 @@ Deno.serve(async (req) => {
         failureCount: fcmResponse.failureCount,
         failures,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Limit": "20" } }
     );
   } catch (err) {
     console.error("[send-alarm-fcm] Error:", err);
     return new Response(
       JSON.stringify({ error: String(err instanceof Error ? err.message : err) }),
-      { status: 400, headers: corsHeaders }
+      { status: 400, headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } }
     );
   }
 });

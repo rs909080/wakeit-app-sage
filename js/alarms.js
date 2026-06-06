@@ -185,6 +185,18 @@ async function doSetAlarm() {
         if (!group) {
           showToast('Select a group first', 'error'); return;
         }
+        
+        // RATE LIMIT CHECK
+        const nowMs = Date.now();
+        let alarmAttempts = JSON.parse(localStorage.getItem('wakeit_alarm_attempts') || '[]');
+        alarmAttempts = alarmAttempts.filter(t => nowMs - t < 86400000); // 24 hours
+        if (alarmAttempts.length >= 20) {
+          showToast('You can only set up to 20 alarms per day.', 'error');
+          return;
+        }
+        alarmAttempts.push(nowMs);
+        localStorage.setItem('wakeit_alarm_attempts', JSON.stringify(alarmAttempts));
+
         const uid = getCurrentUserId();
 
         // Guard: only the group admin (owner) can create alarms
@@ -240,6 +252,7 @@ async function doSetAlarm() {
         if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #fff; border-bottom-color:transparent; border-radius:50%; animation: spin 1s linear infinite; vertical-align:middle; margin-right:8px;"></span>Setting…'; }
 
         const tone = AppState.selectedTone || { name: 'Classic Beep', type: 'default', url: null };
+        if (tone.name && tone.name.length > 100) tone.name = tone.name.substring(0, 100);
 
         const { data: alarm, error } = await db.from('alarms').insert({
           group_id: group.id,
@@ -248,7 +261,8 @@ async function doSetAlarm() {
           tone_type: tone.type || 'default',
           tone_url: tone.url || null,
           tone_name: tone.name || 'Classic Beep',
-          repeat_type: 'once',
+          repeat_type: AppState.alarmRepeatType || 'once',
+          repeat_days: AppState.alarmRepeatDays || null,
           is_active: true
           // allow_vibration stored locally only — add DB column to persist
         }).select().single();
@@ -463,11 +477,18 @@ function scheduleLocalAlarm(alarm) {
         scheduleLocalNotification(alarm);
       }
 
-function triggerAlarm(alarm) {
+async function triggerAlarm(alarm) {
         // FEATURE 2: Admin (group creator) should never hear their own alarm
-        if (alarm?.group_id && AppState.ownedGroupIds.has(alarm.group_id)) {
-          console.log('[Wakeit] Skipping alarm ring — current user is group owner for group:', alarm.group_id);
-          return;
+        if (alarm?.group_id) {
+          if (AppState.ownedGroupIds.has(alarm.group_id)) {
+            console.log('[Wakeit] Skipping alarm ring — current user is group owner for group');
+            return;
+          }
+          const isOwner = await isGroupOwner(alarm.group_id);
+          if (isOwner) {
+            console.log('[Wakeit] Skipping alarm ring — current user is group owner (DB verified) for group');
+            return;
+          }
         }
 
         AppState.ringingAlarm = alarm;
@@ -507,6 +528,23 @@ function maxAlarmsAllowed() {
         return getUserPlanLimits()?.maxAlarms ?? 0;
       }
 
+async function isGroupOwner(groupId) {
+        const uid = getCurrentUserId();
+        if (!uid) return false;
+        if (AppState.ownedGroupIds.has(groupId)) return true;
+        
+        try {
+          const { data: group } = await db.from('groups').select('owner_id').eq('id', groupId).single();
+          if (group && group.owner_id === uid) {
+            AppState.ownedGroupIds.add(groupId);
+            return true;
+          }
+        } catch (e) {
+          console.warn('[Wakeit] isGroupOwner check failed:', e);
+        }
+        return false;
+      }
+
 
 // Global exports for backward compatibility with inline HTML and cross-module calls
 window.updateClocks = updateClocks;
@@ -526,3 +564,4 @@ window.renderAlarmHistory = renderAlarmHistory;
 window.scheduleLocalAlarm = scheduleLocalAlarm;
 window.triggerAlarm = triggerAlarm;
 window.maxAlarmsAllowed = maxAlarmsAllowed;
+window.isGroupOwner = isGroupOwner;

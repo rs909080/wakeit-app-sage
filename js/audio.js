@@ -203,7 +203,7 @@ function preloadAlarmAudio(alarm) {
           audio.src = audioUrl;
           audio.load(); // Start fetching into browser cache
           _preloadedAudio.set(alarm.id, audio);
-          console.log('[Wakeit] Audio preloaded for alarm:', alarm.id);
+          console.log('[Wakeit] Audio preloaded for alarm');
         } catch (e) {
           console.warn('[Wakeit] Audio preload failed:', e);
         }

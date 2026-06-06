@@ -12,7 +12,7 @@ async function getSafeSession() {
       }
 
 async function handleUserSessionChange(event, session) {
-        console.log('[Wakeit] handleUserSessionChange entered, event:', event);
+        console.log('[Wakeit] handleUserSessionChange entered');
         try {
           // --- Legacy plan migration ---
           // If user has old 'wakeit_plan' key but no new 'wakeit_plan_type',
@@ -116,13 +116,30 @@ async function handleUserSessionChange(event, session) {
           console.error('[Wakeit] handleUserSessionChange unexpected exception:', err);
         } finally {
           // Profile + plan data is now loaded — resolve the gate so appInit() can route
-          console.log('[Wakeit] Profile ready — plan_type:', localStorage.getItem('wakeit_plan_type'));
+          console.log('[Wakeit] Profile ready');
           if (_profileReadyResolve) { _profileReadyResolve(); _profileReadyResolve = null; }
         }
       }
 
 function initLogin() {
-        // Sign Up with email
+        const setupToggle = (toggleId, inputId) => {
+          const toggle = document.getElementById(toggleId);
+          const input = document.getElementById(inputId);
+          if (toggle && input) {
+            toggle.onclick = () => {
+              const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+              input.setAttribute('type', type);
+              toggle.innerHTML = type === 'password' 
+                ? '<i data-lucide="eye" class="lucide-icon lucide-icon-sm"></i>' 
+                : '<i data-lucide="eye-off" class="lucide-icon lucide-icon-sm"></i>';
+              if (window.lucide) window.lucide.createIcons();
+            };
+          }
+        };
+        setupToggle('toggle-signup-password', 'signup-password');
+        setupToggle('toggle-signup-confirm', 'signup-confirm');
+        setupToggle('toggle-login-password', 'login-password');
+
         const btnSignup = document.getElementById('btn-create-account');
         if (btnSignup) {
           btnSignup.onclick = async () => {
@@ -130,7 +147,9 @@ function initLogin() {
             const email = document.getElementById('signup-email')?.value.trim();
             const pass = document.getElementById('signup-password')?.value;
             const confirm = document.getElementById('signup-confirm')?.value;
+
             if (!name || !email || !pass) { showToast('Fill all fields', 'error'); return; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Invalid email address', 'error'); return; }
             if (pass.length < 6) { showToast('Password must be 6+ chars', 'error'); return; }
             if (confirm && pass !== confirm) { showToast('Passwords do not match', 'error'); return; }
 
@@ -139,7 +158,7 @@ function initLogin() {
 
             const { data, error } = await db.auth.signUp({
               email, password: pass,
-              options: { data: { full_name: name, phone: document.getElementById('signup-phone')?.value.trim() || '' } }
+              options: { data: { full_name: name } }
             });
 
             if (error) {
@@ -173,7 +192,6 @@ function initLogin() {
                 id: data.user.id,
                 name,
                 email,
-                phone: document.getElementById('signup-phone')?.value.trim() || null,
                 plan_type: 'free_trial'
               }, { onConflict: 'id' }).then(({ error: pErr }) => {
                 if (pErr) console.warn('[Wakeit] profile upsert:', pErr.message);
@@ -433,20 +451,7 @@ async function showPlansModalIfNeeded() {
         }
       }
 
-function togglePlanCurrency() {
-        planCurrencyIsUSD = !planCurrencyIsUSD;
-        const key = planCurrencyIsUSD ? 'usd' : 'inr';
-        document.querySelectorAll('.plan-price').forEach(el => {
-          el.textContent = el.dataset[key];
-        });
-        document.querySelectorAll('.plan-btn').forEach(el => {
-          el.textContent = el.dataset[key];
-        });
-        const btn = document.getElementById('currency-toggle-btn');
-        if (btn) btn.textContent = planCurrencyIsUSD ? 'Show prices in ₹ INR' : 'Show prices in $ USD';
-      }
-
-async function activatePlan(planType) {
+      async function activatePlan(planType) {
         closeModal('modal-plans');
 
         if (planType === 'free_trial') {
@@ -462,7 +467,7 @@ async function activatePlan(planType) {
         const options = {
           key: RAZORPAY_KEY,
           amount: price.amount,
-          currency: 'INR',
+          currency: 'USD',
           name: 'Wakeit',
           description: price.desc,
           image: '/icon-192.png',
@@ -553,10 +558,30 @@ window.getPlanType = getPlanType;
 window.isPlanActive = isPlanActive;
 window.checkPlanExpiry = checkPlanExpiry;
 window.showPlansModalIfNeeded = showPlansModalIfNeeded;
-window.togglePlanCurrency = togglePlanCurrency;
 window.activatePlan = activatePlan;
 window.persistPlan = persistPlan;
 window.updateSettingsPlanCard = updateSettingsPlanCard;
+
+window.confirmDeleteAccount = function() {
+  if (typeof openModal === 'function') openModal('modal-delete-account');
+};
+window.doDeleteAccount = async function() {
+  if (typeof closeModal === 'function') closeModal('modal-delete-account');
+  const user = AppState.user;
+  if (!user) return;
+  try {
+    if (typeof showToast === 'function') showToast('Deleting account...', 'info');
+    await db.from('profiles').delete().eq('id', user.id);
+    await db.auth.signOut();
+    localStorage.clear();
+    sessionStorage.clear();
+    AppState.user = null;
+    if (typeof showToast === 'function') showToast('Account deleted successfully', 'success');
+    if (typeof navigate === 'function') navigate('#/login');
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('Failed to delete account', 'error');
+  }
+};
 
 /* Auth state listener — single source of truth */
 db.auth.onAuthStateChange((event, session) => {

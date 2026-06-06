@@ -6,8 +6,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const rateLimitMap = new Map<string, { count: number, resetAt: number }>();
+function checkRateLimit(req: Request) {
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const now = Date.now();
+  let record = rateLimitMap.get(ip);
+  if (!record || record.resetAt < now) {
+    record = { count: 0, resetAt: now + 60000 };
+  }
+  record.count++;
+  rateLimitMap.set(ip, record);
+  return { allowed: record.count <= 20, remaining: Math.max(0, 20 - record.count) };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const rl = checkRateLimit(req);
+  if (!rl.allowed) {
+    return new Response("Too Many Requests", { status: 429, headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } });
+  }
   
   try {
     const { alarm_id } = await req.json();
@@ -45,7 +62,7 @@ Deno.serve(async (req) => {
       .filter(id => id != null);
 
     if (playerIds.length === 0) {
-      return new Response(JSON.stringify({ message: "No users with OneSignal ID found." }), { headers: corsHeaders });
+      return new Response(JSON.stringify({ message: "No users with OneSignal ID found." }), { headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } });
     }
 
     const [hours, minutes] = alarm.time_string.split(':').map(Number);
@@ -75,8 +92,8 @@ Deno.serve(async (req) => {
     });
 
     const data = await res.json();
-    return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json', "X-RateLimit-Limit": "20" } });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } });
   }
 });

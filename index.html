@@ -2277,66 +2277,40 @@
        S-13  ALARM RINGING
     ================================================ */
     #screen-alarm-ringing {
-      background: linear-gradient(160deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-      align-items: center;
-      overflow-y: auto;
+      background: #4CD964;
+      position: relative;
+      overflow: hidden;
     }
 
-    .ringing-glow-ring {
+    .ringing-pulse-ring {
       position: absolute;
       border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.15);
-      animation: glowRing 2s ease-in-out infinite;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      animation: pulseRing 2s ease-out infinite;
+      pointer-events: none;
     }
 
-    @keyframes glowRing {
-      0% {
-        transform: scale(0.8);
-        opacity: 0.8
-      }
-
-      100% {
-        transform: scale(1.6);
-        opacity: 0
-      }
+    @keyframes pulseRing {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(2); opacity: 0; }
     }
 
     .alarm-bell {
-      font-size: 80px;
       animation: bellShake 0.5s ease-in-out infinite;
       z-index: 1;
     }
 
     @keyframes bellShake {
-
-      0%,
-      100% {
-        transform: rotate(0);
-      }
-
-      15% {
-        transform: rotate(-12deg);
-      }
-
-      30% {
-        transform: rotate(12deg);
-      }
-
-      45% {
-        transform: rotate(-8deg);
-      }
-
-      60% {
-        transform: rotate(8deg);
-      }
-
-      75% {
-        transform: rotate(-4deg);
-      }
+      0%, 100% { transform: rotate(0); }
+      15% { transform: rotate(-12deg); }
+      30% { transform: rotate(12deg); }
+      45% { transform: rotate(-8deg); }
+      60% { transform: rotate(8deg); }
+      75% { transform: rotate(-4deg); }
     }
 
     .alarm-time-display {
-      font-size: 56px;
+      font-size: 64px;
       font-weight: 900;
       color: #fff;
       z-index: 1;
@@ -2344,10 +2318,67 @@
     }
 
     .alarm-group-label {
-      font-size: var(--text-base);
-      color: rgba(255, 255, 255, 0.8);
+      font-size: 18px;
+      color: #fff;
       z-index: 1;
       margin-top: 4px;
+    }
+
+    .wake-btn-hero {
+      flex: 1;
+      background: #fff;
+      border: none;
+      border-radius: 24px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .wake-btn-hero:active {
+      transform: scale(0.95);
+    }
+    .wake-btn-hero .wake-btn-icon {
+      font-size: 36px;
+    }
+    .wake-btn-hero .wake-btn-label {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+    .wake-btn-hero .wake-btn-sub {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .wake-btn-secondary {
+      flex: 1;
+      background: transparent;
+      border: 2px solid #FFD60A;
+      border-radius: 24px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .wake-btn-secondary:active {
+      transform: scale(0.95);
+    }
+    .wake-btn-secondary .wake-btn-icon {
+      font-size: 36px;
+    }
+    .wake-btn-secondary .wake-btn-label {
+      font-size: 18px;
+      font-weight: bold;
+      color: #FFD60A;
     }
 
     /* ---- Reason picker (dismiss alarm) ---- */
@@ -2988,6 +3019,9 @@
       }
     }
   </style>
+  <style>
+    #settings-plan-card:hover { transform: scale(0.98); opacity: 0.9; transition: all 0.2s ease; }
+  </style>
 </head>
 
 <body class="theme-night">
@@ -3157,11 +3191,6 @@
           <input type="text" class="input-field" id="signup-name" placeholder="Sumit Sharma" />
         </div>
         <div class="input-wrap input-icon-wrap">
-          <span class="input-label">Phone Number</span>
-          <span class="input-icon"><i data-lucide="phone" class="lucide-icon lucide-icon-sm"></i></span>
-          <input type="tel" class="input-field" id="signup-phone" placeholder="+91 9876543210" />
-        </div>
-        <div class="input-wrap input-icon-wrap">
           <span class="input-label">Email</span>
           <span class="input-icon"><i data-lucide="mail" class="lucide-icon lucide-icon-sm"></i></span>
           <input type="email" class="input-field" id="signup-email" placeholder="you@email.com" />
@@ -3169,12 +3198,14 @@
         <div class="input-wrap input-icon-wrap">
           <span class="input-label">Password</span>
           <span class="input-icon"><i data-lucide="lock" class="lucide-icon lucide-icon-sm"></i></span>
-          <input type="password" class="input-field" id="signup-password" placeholder="••••••••" />
+          <input type="password" class="input-field" id="signup-password" placeholder="••••••••" style="padding-right: 40px;" />
+          <span id="toggle-signup-password" style="position:absolute; right:12px; bottom:14px; cursor:pointer; color:var(--text-secondary);"><i data-lucide="eye" class="lucide-icon lucide-icon-sm"></i></span>
         </div>
         <div class="input-wrap input-icon-wrap">
           <span class="input-label">Confirm Password</span>
           <span class="input-icon"><i data-lucide="lock" class="lucide-icon lucide-icon-sm"></i></span>
-          <input type="password" class="input-field" id="signup-confirm" placeholder="••••••••" />
+          <input type="password" class="input-field" id="signup-confirm" placeholder="••••••••" style="padding-right: 40px;" />
+          <span id="toggle-signup-confirm" style="position:absolute; right:12px; bottom:14px; cursor:pointer; color:var(--text-secondary);"><i data-lucide="eye" class="lucide-icon lucide-icon-sm"></i></span>
         </div>
         <button id="btn-create-account" class="btn-gradient"><i data-lucide="user-plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Account</button>
         <div class="divider">or continue with</div>
@@ -3306,10 +3337,6 @@
             </div>
 
             <div class="card" style="padding:0; overflow:hidden; margin-bottom: var(--space-4);">
-              <div class="option-row" onclick="openGroupModal()">
-                <span class="option-label"><i data-lucide="users" class="lucide-icon icon-prefix"></i>Alarm for</span>
-                <span class="option-value">Morning Squad <span class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></span>
-              </div>
               <div class="option-row" onclick="navigate('#/tone-picker')">
                 <span class="option-label"><i data-lucide="music" class="lucide-icon icon-prefix"></i>Tone</span>
                 <span class="option-value" id="alarm-tone-label">Default — Classic Beep <span
@@ -3329,7 +3356,7 @@
 
               <div class="option-row" onclick="openRepeatModal()">
                 <span class="option-label"><i data-lucide="calendar" class="lucide-icon icon-prefix"></i>Repeat</span>
-                <span class="option-value">Once <span class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></span>
+                <span class="option-value" id="alarm-repeat-label">Once <span class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></span>
               </div>
             </div>
 
@@ -3488,15 +3515,9 @@
             </div>
 
             <div class="section-title">Group Emoji</div>
-            <div class="emoji-selector" id="emoji-selector" style="margin-bottom: var(--space-5);">
-              <div class="emoji-option selected" onclick="selectEmoji(this,'')"></div>
-              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
-              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
-              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
-              <div class="emoji-option" onclick="selectEmoji(this,'🏋️')">🏋️</div>
-              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
-              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
-              <div class="emoji-option" onclick="selectEmoji(this,'')"></div>
+            <div class="emoji-selector-single" style="margin-bottom: var(--space-5); display: flex; justify-content: center;">
+              <div id="emoji-display-box" onclick="if(typeof openEmojiPicker === 'function') openEmojiPicker();" style="width: 60px; height: 60px; font-size: 32px; display: flex; align-items: center; justify-content: center; background: var(--card-bg); border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: border-color 0.2s;">😀</div>
+              <input type="text" id="emoji-hidden-input" inputmode="emoji" style="opacity: 0; position: absolute; pointer-events: none; width: 0; height: 0;" oninput="document.getElementById('emoji-display-box').innerText = this.value.slice(-2); if(typeof selectedEmoji !== 'undefined') selectedEmoji = this.value.slice(-2);" />
             </div>
 
             <div id="members-plan-card" class="card"
@@ -3636,7 +3657,7 @@
             <!-- Subscription -->
             <div class="settings-section-header">Subscription</div>
             <div id="settings-plan-card" class="card"
-              style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-4);">
+              style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-4); cursor:pointer;" onclick="openModal('modal-plans')">
               <div>
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span id="settings-plan-pill" class="plan-pill pill-trial" style="margin:0;">Trial</span>
@@ -3664,9 +3685,9 @@
               <div class="option-row"><span class="option-label"><i data-lucide="info" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--text-secondary);"></i>App Version</span><span
                   class="option-value">v3.1.0</span>
               </div>
-              <div class="option-row" style="cursor:pointer;"><span class="option-label"><i data-lucide="shield" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--text-secondary);"></i>Privacy Policy</span><span
+              <div class="option-row" style="cursor:pointer;" onclick="navigate('#/privacy-policy')"><span class="option-label"><i data-lucide="shield" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--text-secondary);"></i>Privacy Policy</span><span
                   class="option-value"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></div>
-              <div class="option-row" style="cursor:pointer;"><span class="option-label"><i data-lucide="scroll-text" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--text-secondary);"></i>Terms of Service</span><span
+              <div class="option-row" style="cursor:pointer;" onclick="navigate('#/terms-of-service')"><span class="option-label"><i data-lucide="scroll-text" class="lucide-icon lucide-icon-sm icon-prefix" style="color:var(--text-secondary);"></i>Terms of Service</span><span
                   class="option-value"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></div>
               <div class="option-row" style="cursor:pointer;" onclick="showToast('Thanks for the love! ', 'success')">
                 <span class="option-label"><i data-lucide="star" class="lucide-icon lucide-icon-sm icon-prefix" style="color:#FFD60A;"></i>Rate Wakeit </span><span class="option-value"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span>
@@ -3675,7 +3696,7 @@
 
             <button id="btn-sign-out" class="btn-outline"
               style="color:var(--danger); border-color:var(--danger); margin-bottom:var(--space-3);"><i data-lucide="log-out" class="lucide-icon lucide-icon-sm icon-prefix"></i>Log Out</button>
-            <div
+            <div id="btn-delete-account" onclick="if(typeof confirmDeleteAccount === 'function') confirmDeleteAccount();"
               style="color:var(--danger); font-size:var(--text-sm); text-align:center; cursor:pointer; padding:8px; font-weight:600;">
               <i data-lucide="trash-2" class="lucide-icon lucide-icon-sm icon-prefix"></i>Delete Account</div>
           </div>
@@ -3683,46 +3704,66 @@
         </div>
 
         <!-- ================================================ -->
+        <!-- PRIVACY POLICY & TERMS OF SERVICE -->
+        <!-- ================================================ -->
+        <div id="screen-privacy-policy" class="screen">
+          <div id="privacy-policy-header"></div>
+          <div class="page-content">
+            <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px; color: var(--text-primary);">Privacy Policy</h2>
+            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">We value your privacy. Wakeit collects minimal data required to provide the alarm service. We do not sell your personal data to third parties. We use secure authentication and encrypted connections to keep your data safe.</p>
+            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">By using Wakeit, you agree to our data collection practices as outlined in this policy. For any questions, please contact our support team.</p>
+          </div>
+        </div>
+
+        <div id="screen-terms-of-service" class="screen">
+          <div id="terms-of-service-header"></div>
+          <div class="page-content">
+            <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px; color: var(--text-primary);">Terms of Service</h2>
+            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">Welcome to Wakeit. By accessing or using our application, you agree to be bound by these Terms of Service. Wakeit is provided "as is" without any warranties. We reserve the right to modify or terminate the service at any time.</p>
+            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. Wakeit is not liable for any missed alarms or consequences thereof.</p>
+          </div>
+        </div>
+
+        <!-- ================================================ -->
         <!-- S-13 ALARM RINGING -->
         <!-- ================================================ -->
-        <div id="screen-alarm-ringing" class="screen screen-fullscreen" style="display:none;">
-          <!-- Glow rings -->
-          <div class="ringing-glow-ring"
-            style="width:200px;height:200px;top:calc(50% - 210px);left:calc(50% - 100px);animation-delay:0s;"></div>
-          <div class="ringing-glow-ring"
-            style="width:280px;height:280px;top:calc(50% - 250px);left:calc(50% - 140px);animation-delay:0.6s;"></div>
-          <div class="ringing-glow-ring"
-            style="width:360px;height:360px;top:calc(50% - 290px);left:calc(50% - 180px);animation-delay:1.2s;"></div>
+        <div id="screen-alarm-ringing" class="screen screen-fullscreen" style="display:none; background:#4CD964; position:relative; overflow:hidden;">
+          <!-- Pulsing rings -->
+          <div class="ringing-pulse-ring" style="width:200px;height:200px;top:calc(35% - 100px);left:calc(50% - 100px);animation-delay:0s;"></div>
+          <div class="ringing-pulse-ring" style="width:280px;height:280px;top:calc(35% - 140px);left:calc(50% - 140px);animation-delay:0.6s;"></div>
+          <div class="ringing-pulse-ring" style="width:360px;height:360px;top:calc(35% - 180px);left:calc(50% - 180px);animation-delay:1.2s;"></div>
 
-          <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:16px; padding-top:28px; z-index:1;">
-            <div class="alarm-bell" style="display:flex; align-items:center; justify-content:center;"><i data-lucide="bell" class="lucide-icon" style="width:36px; height:36px; color:#fff;"></i></div>
-            <div class="alarm-time-display" id="ringing-time">07:30 AM</div>
+          <div style="display:flex; flex-direction:column; align-items:center; width:100%; height:100%; padding-top:15vh; z-index:1; position:relative;">
+            <div class="alarm-bell" style="display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
+              <i data-lucide="bell" class="lucide-icon" style="width:48px; height:48px; color:#fff;"></i>
+            </div>
+            <div class="alarm-time-display" id="ringing-time">08:12 am</div>
             <div class="alarm-group-label" id="ringing-group-label">Ringing for: Your Group</div>
 
-            <!-- Instruction: rendered by initAlarmRinging() -->
-            <div class="dismiss-instruction" id="ringing-dismiss-instruction">
+            <!-- Keep these hidden if needed by JS -->
+            <div class="dismiss-instruction" id="ringing-dismiss-instruction" style="display:none;">
               Tap <strong id="ringing-taps-required">1</strong> time to dismiss
             </div>
+            <div class="tap-progress-dots" id="ringing-tap-dots" style="display:none;"></div>
 
-            <!-- Animated progress dots: rendered by initAlarmRinging() -->
-            <div class="tap-progress-dots" id="ringing-tap-dots"></div>
+            <div style="margin-top: auto; margin-bottom: 8vh; width: 100%; padding: 0 20px; text-align: center;">
+              <div style="font-size: 24px; font-weight: bold; color: #fff; margin-bottom: 24px;">Are you awake?</div>
+              <div style="display: flex; gap: 16px; justify-content: center; width: 100%;">
+                <!-- Hero "I'm Awake" button -->
+                <button class="wake-btn-hero" id="btn-i-am-awake" onclick="recordWakeAttempt('awake')">
+                  <div class="wake-btn-icon">🌞</div>
+                  <div class="wake-btn-label">I'm Awake</div>
+                  <div class="wake-btn-sub" id="wake-awake-count">Tapped 0/5 times</div>
+                </button>
 
-            <!-- Hero "I'm Awake" button -->
-            <button class="wake-btn-hero" id="btn-i-am-awake" onclick="recordWakeAttempt('awake')">
-              <span class="wake-btn-hero-icon">🌞</span>
-              <span class="wake-btn-hero-label">I'm Awake</span>
-              <span class="wake-btn-hero-sub" id="wake-awake-count"></span>
-            </button>
-
-            <!-- Secondary "Still Sleeping" button -->
-            <button class="wake-btn-secondary" id="btn-still-sleeping" onclick="recordWakeAttempt('sleeping')">
-              <i data-lucide="moon" class="lucide-icon" style="width:18px;height:18px;color:rgba(255,149,0,0.9);"></i>
-              <span class="wake-btn-secondary-label">Still Sleeping</span>
-            </button>
+                <!-- Secondary "Still Sleeping" button -->
+                <button class="wake-btn-secondary" id="btn-still-sleeping" onclick="recordWakeAttempt('sleeping')">
+                  <div class="wake-btn-icon">🌙</div>
+                  <div class="wake-btn-label">Still Sleeping</div>
+                </button>
+              </div>
+            </div>
           </div>
-
-          <!-- Bottom padding -->
-          <div style="height: 48px; z-index:1;"></div>
         </div>
 
         <!-- ================================================ -->
@@ -3795,27 +3836,67 @@
         <div class="modal-handle"></div>
         <div class="modal-title">Repeat</div>
         <div style="display:flex; flex-direction:column; gap:var(--space-2);">
-          <div class="option-row" onclick="closeModal('modal-repeat')"
+          <div class="option-row" onclick="selectRepeat('once', 'Once')"
             style="cursor:pointer; border-radius:var(--radius-sm);">
-            <span class="option-label">Once</span><span style="color:var(--primary)">✓</span>
+            <span class="option-label">Once</span>
           </div>
-          <div class="option-row" onclick="closeModal('modal-repeat')"
+          <div class="option-row" onclick="selectRepeat('daily', 'Every day')"
             style="cursor:pointer; border-radius:var(--radius-sm);">
             <span class="option-label">Every day</span>
           </div>
-          <div class="option-row" onclick="closeModal('modal-repeat')"
+          <div class="option-row" onclick="selectRepeat('weekdays', 'Weekdays (Mon–Fri)')"
             style="cursor:pointer; border-radius:var(--radius-sm);">
             <span class="option-label">Weekdays (Mon–Fri)</span>
           </div>
-          <div class="option-row" onclick="closeModal('modal-repeat')"
+          <div class="option-row" onclick="selectRepeat('weekends', 'Weekends (Sat–Sun)')"
             style="cursor:pointer; border-radius:var(--radius-sm);">
             <span class="option-label">Weekends (Sat–Sun)</span>
           </div>
-          <div class="option-row" onclick="closeModal('modal-repeat')"
+          <div class="option-row" onclick="selectRepeat('custom', 'Custom days')"
             style="cursor:pointer; border-radius:var(--radius-sm);">
             <span class="option-label">Custom days</span>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Custom Days picker modal -->
+    <div class="modal-overlay" id="modal-custom-days">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">Custom Days</div>
+        <div style="display:flex; flex-direction:column; gap:var(--space-2); margin-bottom: 20px;">
+          <label class="option-row" style="cursor:pointer; border-radius:var(--radius-sm);">
+            <span class="option-label">Sunday</span>
+            <input type="checkbox" class="custom-day-checkbox" value="0" data-label="Sun">
+          </label>
+          <label class="option-row" style="cursor:pointer; border-radius:var(--radius-sm);">
+            <span class="option-label">Monday</span>
+            <input type="checkbox" class="custom-day-checkbox" value="1" data-label="Mon">
+          </label>
+          <label class="option-row" style="cursor:pointer; border-radius:var(--radius-sm);">
+            <span class="option-label">Tuesday</span>
+            <input type="checkbox" class="custom-day-checkbox" value="2" data-label="Tue">
+          </label>
+          <label class="option-row" style="cursor:pointer; border-radius:var(--radius-sm);">
+            <span class="option-label">Wednesday</span>
+            <input type="checkbox" class="custom-day-checkbox" value="3" data-label="Wed">
+          </label>
+          <label class="option-row" style="cursor:pointer; border-radius:var(--radius-sm);">
+            <span class="option-label">Thursday</span>
+            <input type="checkbox" class="custom-day-checkbox" value="4" data-label="Thu">
+          </label>
+          <label class="option-row" style="cursor:pointer; border-radius:var(--radius-sm);">
+            <span class="option-label">Friday</span>
+            <input type="checkbox" class="custom-day-checkbox" value="5" data-label="Fri">
+          </label>
+          <label class="option-row" style="cursor:pointer; border-radius:var(--radius-sm);">
+            <span class="option-label">Saturday</span>
+            <input type="checkbox" class="custom-day-checkbox" value="6" data-label="Sat">
+          </label>
+        </div>
+        <button class="btn-gradient" style="width:100%;margin-bottom:var(--space-3);" onclick="applyCustomDays()">Done</button>
+        <button class="btn-outline" style="width:100%;" onclick="closeModal('modal-custom-days'); openModal('modal-repeat')">Back</button>
       </div>
     </div>
 
@@ -3839,15 +3920,26 @@
       <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-title" style="color:#FF453A;">⚠️ Delete Group?</div>
-        <p
-          style="font-size:14px;color:var(--text-secondary);margin:0 0 var(--space-5);text-align:center;line-height:1.6;">
+        <p style="font-size:14px;color:var(--text-secondary);margin:0 0 var(--space-5);text-align:center;line-height:1.6;">
           This will permanently delete the group, all alarms, and all members. This cannot be undone.
         </p>
-        <button class="btn-danger" style="width:100%;margin-bottom:var(--space-3);" onclick="confirmDeleteGroup()">Yes,
-          Delete Forever</button>
+        <button class="btn-danger" style="width:100%;margin-bottom:var(--space-3);" onclick="confirmDeleteGroup()">Yes, Delete Forever</button>
         <button class="btn-outline" style="width:100%;" onclick="closeModal('modal-delete-group')">Cancel</button>
       </div>
     </div>
+
+        <!-- Delete Account Modal -->
+        <div class="modal-overlay" id="modal-delete-account">
+          <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <div class="modal-title" style="color:#FF453A;">⚠️ Delete Account?</div>
+            <div style="font-size:14px; color:var(--text-secondary); margin-bottom:24px; text-align:center;">
+              This action cannot be undone. All your groups, alarms, and settings will be permanently removed.
+            </div>
+            <button class="btn-danger" style="width:100%; margin-bottom:12px;" onclick="if(typeof doDeleteAccount === 'function') doDeleteAccount();"><i data-lucide="trash-2" class="lucide-icon lucide-icon-sm icon-prefix"></i>Yes, Delete Account</button>
+            <button class="btn-outline" style="width:100%;" onclick="closeModal('modal-delete-account')">Cancel</button>
+          </div>
+        </div>
 
 
     <script>
@@ -3995,15 +4087,19 @@
         '#/settings': 'screen-settings',
         '#/alarm-ringing': 'screen-alarm-ringing',
         '#/wake-dashboard': 'screen-wake-dashboard',
+        '#/privacy-policy': 'screen-privacy-policy',
+        '#/terms-of-service': 'screen-terms-of-service',
       };
 
-      const PUBLIC_ROUTES = ['#/landing', '#/splash', '#/onboarding', '#/login', '#/paywall'];
+      const PUBLIC_ROUTES = ['#/landing', '#/splash', '#/onboarding', '#/login', '#/paywall', '#/privacy-policy', '#/terms-of-service'];
 
       /* ================================================
          SUPABASE CLIENT (Stage 3 — Section 6)
       ================================================ */
       const SUPABASE_URL = 'https://aztcxxucyjgftsnlxpsa.supabase.co';
       const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6dGN4eHVjeWpnZnRzbmx4cHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1OTk3NzQsImV4cCI6MjA5NTE3NTc3NH0.RiS5l2-MO9OMYYxoP-_zkdOYIjcecXS5MWYSbJlovd8';
+      // SECURITY CLASSIFICATION:
+      // SUPABASE_ANON is a public, safe-to-expose anonymous key. It relies on Row Level Security (RLS) in the Supabase database to secure the data. It is perfectly fine to have this in the frontend.
       const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
       /* App state (non-auth) */
@@ -4506,6 +4602,8 @@
           case '#/alarm-ringing': initAlarmRinging(); break;
           case '#/wake-dashboard': await initWakeDashboard(); break;
           case '#/landing': initLanding(); break;
+          case '#/privacy-policy': initPrivacyPolicy(); break;
+          case '#/terms-of-service': initTermsOfService(); break;
         }
       }
 
@@ -4598,6 +4696,23 @@
       /* ------ S-03 Login (Stage 3 — real auth) ------ */
       function initLogin() {
         // Sign Up with email
+        const setupToggle = (toggleId, inputId) => {
+          const toggle = document.getElementById(toggleId);
+          const input = document.getElementById(inputId);
+          if (toggle && input) {
+            toggle.onclick = () => {
+              const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+              input.setAttribute('type', type);
+              toggle.innerHTML = type === 'password' 
+                ? '<i data-lucide="eye" class="lucide-icon lucide-icon-sm"></i>' 
+                : '<i data-lucide="eye-off" class="lucide-icon lucide-icon-sm"></i>';
+              if (window.lucide) window.lucide.createIcons();
+            };
+          }
+        };
+        setupToggle('toggle-signup-password', 'signup-password');
+        setupToggle('toggle-signup-confirm', 'signup-confirm');
+
         const btnSignup = document.getElementById('btn-create-account');
         if (btnSignup) {
           btnSignup.onclick = async () => {
@@ -4614,7 +4729,7 @@
 
             const { data, error } = await db.auth.signUp({
               email, password: pass,
-              options: { data: { full_name: name, phone: document.getElementById('signup-phone')?.value.trim() || '' } }
+              options: { data: { full_name: name } }
             });
 
             if (error) {
@@ -4648,7 +4763,6 @@
                 id: data.user.id,
                 name,
                 email,
-                phone: document.getElementById('signup-phone')?.value.trim() || null,
                 plan_type: 'free_trial'
               }, { onConflict: 'id' }).then(({ error: pErr }) => {
                 if (pErr) console.warn('[Wakeit] profile upsert:', pErr.message);
@@ -5661,10 +5775,10 @@
         }
 
         // Reset emoji to default
-        selectedEmoji = '';
-        document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
-        const defaultEmoji = document.querySelector('.emoji-option');
-        if (defaultEmoji) defaultEmoji.classList.add('selected');
+        const emojiDisplay = document.getElementById('emoji-display-box');
+        if (emojiDisplay) emojiDisplay.innerText = '😀';
+        const emojiInput = document.getElementById('emoji-hidden-input');
+        if (emojiInput) emojiInput.value = '';
 
         const btn = document.getElementById('btn-create-group');
         if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Group'; btn.onclick = doCreateGroup; }
@@ -5699,14 +5813,16 @@
 
           // Single RPC call — handles plan checks, limits, insert, and member add
           const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-          console.log('[Wakeit] Calling create_group_with_member RPC...', { p_name: name, p_emoji: selectedEmoji, p_invite_code: code, p_expected_members: expectedMembers });
+          const emojiDisplay = document.getElementById('emoji-display-box');
+          const finalEmoji = emojiDisplay ? emojiDisplay.innerText : '😀';
+          console.log('[Wakeit] Calling create_group_with_member RPC...');
           const rpcResult = await db.rpc('create_group_with_member', {
             p_name: name,
-            p_emoji: selectedEmoji,
+            p_emoji: finalEmoji,
             p_invite_code: code,
             p_expected_members: expectedMembers
           });
-          console.log('[Wakeit] RPC returned:', JSON.stringify(rpcResult));
+          console.log('[Wakeit] RPC returned:', rpcResult ? 'success' : 'failed');
           const { data: result, error: rpcErr } = rpcResult;
 
           if (rpcErr) {
@@ -6039,6 +6155,23 @@
           // Find the first unresponded alarm
           const missed = recentAlarms.find(a => !respondedSet.has(a.id));
           if (!missed) return;
+
+          // Skip showing the missed alarm overlay if the user owns that alarm's group
+          let isOwner = false;
+          if (AppState.ownedGroupIds.has(missed.group_id)) {
+            isOwner = true;
+          } else {
+            try {
+              const { data: group } = await db.from('groups').select('owner_id').eq('id', missed.group_id).single();
+              if (group && group.owner_id === uid) {
+                AppState.ownedGroupIds.add(missed.group_id);
+                isOwner = true;
+              }
+            } catch (e) {
+              console.warn('[Wakeit] checkMissedAlarms owner check failed:', e);
+            }
+          }
+          if (isOwner) return;
 
           // Show the missed alarm overlay
           _missedAlarmData = missed;
@@ -6609,7 +6742,18 @@
           btn.onclick = async () => {
             const boxes = document.querySelectorAll('.otp-box');
             const code = Array.from(boxes).map(b => b.value).join('').toUpperCase();
-            if (code.length < 6) { showToast('Enter the full 6-digit code', 'error'); return; }
+            if (!/^[A-Z0-9]{6}$/.test(code)) { showToast('Invalid code format. Must be 6 alphanumeric characters.', 'error'); return; }
+
+            // RATE LIMIT CHECK
+            const nowStr = Date.now();
+            let joinAttempts = JSON.parse(localStorage.getItem('wakeit_join_attempts') || '[]');
+            joinAttempts = joinAttempts.filter(t => nowStr - t < 3600000); // 1 hour
+            if (joinAttempts.length >= 10) {
+              showToast('Too many join attempts. Try again later.', 'error');
+              return;
+            }
+            joinAttempts.push(nowStr);
+            localStorage.setItem('wakeit_join_attempts', JSON.stringify(joinAttempts));
 
             btn.disabled = true; btn.innerHTML = '<span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #fff; border-bottom-color:transparent; border-radius:50%; animation: spin 1s linear infinite; vertical-align:middle; margin-right:8px;"></span>Joining…';
             const uid = getCurrentUserId();
@@ -6681,6 +6825,14 @@
           });
         });
         if (boxes[0]) boxes[0].focus();
+      }
+
+      function initPrivacyPolicy() {
+        AppHeader('privacy-policy-header', 'Privacy Policy', true, '#/settings', false);
+      }
+
+      function initTermsOfService() {
+        AppHeader('terms-of-service-header', 'Terms of Service', true, '#/settings', false);
       }
 
       /* ------ S-12 Settings (Stage 3 — real user data) ------ */
@@ -6841,7 +6993,20 @@
        * audio and navigates home.
        */
       async function recordWakeAttempt(status) {
+        if (!AppState.user) {
+          showToast('You must be logged in to record an attempt', 'error');
+          return;
+        }
+
         let alarm = AppState.ringingAlarm;
+        
+        // Guard against duplicate submissions
+        const dedupeKey = `wake_attempt_${alarm?.id}_${status}`;
+        if (sessionStorage.getItem(dedupeKey)) {
+           return;
+        }
+        sessionStorage.setItem(dedupeKey, 'true');
+
         const reqTaps = alarm ? (parseInt(alarm.required_taps) || 1) : 1;
 
         if (status === 'awake') {
@@ -6862,6 +7027,7 @@
             // Not enough taps yet -> insert attempt in background, keep ringing
             const uid = AppState.user?.id;
             if (uid && alarm?.id) {
+              // SQL Injection Safety: We are using Supabase JS client which uses parameterized queries, preventing SQL injection.
               db.from('wake_attempts').insert([{
                 alarm_id: String(alarm.id),
                 user_id: uid,
@@ -6927,7 +7093,7 @@
 
           const awakeEl = document.getElementById('wake-awake-count');
           const sleepEl = document.getElementById('wake-sleeping-count');
-          if (awakeEl) awakeEl.textContent = displayCount > 0 ? `Tapped ${displayCount} time${displayCount !== 1 ? 's' : ''}` : '';
+          if (awakeEl) awakeEl.textContent = `Tapped ${displayCount}/5 times`;
           if (sleepEl) sleepEl.textContent = '';
         } catch (e) { /* non-critical */ }
       }
@@ -7470,11 +7636,11 @@
       /* ---- Replace YOUR_RAZORPAY_KEY_ID when ready ---- */
       const RAZORPAY_KEY = 'YOUR_RAZORPAY_KEY_ID';
 
-      /* Plan pricing constants (INR paise for Razorpay) */
+      /* Plan pricing constants (USD cents for Razorpay/Stripe) */
       const PLAN_PRICES = {
-        member: { amount: 4900, label: '₹49/yr', desc: 'Member — ₹49/year' },
-        admin: { amount: 49900, label: '₹499/yr', desc: 'Admin — ₹499/year' },
-        organisation: { amount: 499900, label: '₹4,999/yr', desc: 'Organisation — ₹4,999/year' }
+        member: { amount: 100, label: '$1/yr', desc: 'Member — $1/year' },
+        admin: { amount: 490, label: '$4.90/yr', desc: 'Admin — $4.90/year' },
+        organisation: { amount: 4990, label: '$49.90/yr', desc: 'Organisation — $49.90/year' }
       };
 
       /* Plan limits — enforced across group creation, join, alarm set */
@@ -7674,19 +7840,7 @@
       }
 
       /** Toggle plan prices between ₹ INR and $ USD */
-      let planCurrencyIsUSD = false;
-      function togglePlanCurrency() {
-        planCurrencyIsUSD = !planCurrencyIsUSD;
-        const key = planCurrencyIsUSD ? 'usd' : 'inr';
-        document.querySelectorAll('.plan-price').forEach(el => {
-          el.textContent = el.dataset[key];
-        });
-        document.querySelectorAll('.plan-btn').forEach(el => {
-          el.textContent = el.dataset[key];
-        });
-        const btn = document.getElementById('currency-toggle-btn');
-        if (btn) btn.textContent = planCurrencyIsUSD ? 'Show prices in ₹ INR' : 'Show prices in $ USD';
-      }
+      let planCurrencyIsUSD = true;
 
       /** Activates a plan (called from plans modal buttons) */
       async function activatePlan(planType) {
@@ -7705,7 +7859,7 @@
         const options = {
           key: RAZORPAY_KEY,
           amount: price.amount,
-          currency: 'INR',
+          currency: 'USD',
           name: 'Wakeit',
           description: price.desc,
           image: '/icon-192.png',
@@ -8241,7 +8395,7 @@
             type: 'new-member',
           }
         });
-        console.log('[Wakeit] Owner notified of new member:', joinerName);
+        console.log('[Wakeit] Owner notified of new member');
       }
 
       /* ================================================
@@ -8443,6 +8597,44 @@
 
       function openGroupModal() { openModal('modal-groups'); }
       function openRepeatModal() { openModal('modal-repeat'); }
+
+      function sanitizeText(str) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/[<>&"']/g, function (match) {
+          const escape = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '&': '&amp;',
+            '"': '&quot;',
+            "'": '&#39;'
+          };
+          return escape[match];
+        }).trim();
+      }
+
+      function selectRepeat(type, label) {
+        AppState.alarmRepeatType = type;
+        if (type === 'custom') {
+          closeModal('modal-repeat');
+          openModal('modal-custom-days');
+        } else {
+          document.getElementById('alarm-repeat-label').innerHTML = label + ' <span class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span>';
+          closeModal('modal-repeat');
+          window.refreshIcons();
+        }
+      }
+
+      function applyCustomDays() {
+        const checkboxes = document.querySelectorAll('.custom-day-checkbox:checked');
+        const days = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        AppState.alarmRepeatDays = days;
+        const labels = Array.from(checkboxes).map(cb => cb.dataset.label);
+        const text = labels.length === 7 ? 'Every day' : labels.join(', ');
+        document.getElementById('alarm-repeat-label').innerHTML = (text || 'Once') + ' <span class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span>';
+        if (days.length === 0) AppState.alarmRepeatType = 'once';
+        closeModal('modal-custom-days');
+        window.refreshIcons();
+      }
 
       // Close modal on backdrop click — use event delegation so it works for
       // modals added to DOM after script runs (e.g. #modal-plans at body level)
@@ -8756,13 +8948,8 @@
       <div class="modal-sheet" style="max-height:94vh;overflow-y:auto;padding-bottom:8px;">
         <div class="modal-handle"></div>
         <div class="modal-title" style="font-size:20px;margin-bottom:4px;">Choose Your Plan</div>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 8px;text-align:center;">Unlock Wakeit
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 16px;text-align:center;">Unlock Wakeit
           features. Start free, upgrade anytime.</p>
-        <div style="text-align:center;margin-bottom:var(--space-4);">
-          <button id="currency-toggle-btn" onclick="togglePlanCurrency()"
-            style="background:rgba(255,255,255,0.08);border:1px solid var(--border);color:var(--text-secondary);font-size:12px;font-weight:600;padding:5px 14px;border-radius:var(--radius-full);cursor:pointer;transition:all 0.2s;">Show
-            prices in $ USD</button>
-        </div>
 
         <!-- ── FREE TRIAL ── -->
         <div class="card" style="margin-bottom:12px;border:2px solid rgba(48,209,88,0.4);position:relative;">
@@ -8792,8 +8979,11 @@
               <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Join groups, can't create</div>
             </div>
             <div style="text-align:right;">
-              <div class="plan-price" data-inr="₹49" data-usd="$0.59"
-                style="font-size:22px;font-weight:900;color:var(--primary);">₹49</div>
+              <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-bottom:2px;">
+                <span style="font-size:12px; text-decoration:line-through; color:var(--text-secondary);">$10</span>
+                <span style="background:#FF453A; color:#fff; font-size:9px; font-weight:700; padding:2px 4px; border-radius:4px;">90% OFF</span>
+              </div>
+              <div class="plan-price" style="font-size:22px;font-weight:900;color:var(--primary);">$1</div>
               <div style="font-size:10px;color:var(--text-secondary);">per year</div>
             </div>
           </div>
@@ -8802,8 +8992,8 @@
             <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Receive alarms &amp; respond</li>
             <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="x" style="width:13px;height:13px;flex-shrink:0;stroke:var(--text-secondary);stroke-width:2.5;fill:none;"></i>Cannot create groups or alarms</li>
           </ul>
-          <button class="btn-outline plan-btn" data-inr="Get Member — ₹49/yr" data-usd="Get Member — $0.59/yr"
-            style="width:100%;font-size:13px;" onclick="activatePlan('member')"><i data-lucide="credit-card" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Member — ₹49/yr</button>
+          <button class="btn-outline plan-btn"
+            style="width:100%;font-size:13px;" onclick="activatePlan('member')"><i data-lucide="credit-card" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Member — $1/yr</button>
         </div>
 
         <!-- ── ADMIN ── -->
@@ -8817,8 +9007,11 @@
               <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Create &amp; manage groups</div>
             </div>
             <div style="text-align:right;">
-              <div class="plan-price" data-inr="₹499" data-usd="$5.99"
-                style="font-size:22px;font-weight:900;color:var(--primary);">₹499</div>
+              <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-bottom:2px;">
+                <span style="font-size:12px; text-decoration:line-through; color:var(--text-secondary);">$49</span>
+                <span style="background:#FF453A; color:#fff; font-size:9px; font-weight:700; padding:2px 4px; border-radius:4px;">90% OFF</span>
+              </div>
+              <div class="plan-price" style="font-size:22px;font-weight:900;color:var(--primary);">$4.90</div>
               <div style="font-size:10px;color:var(--text-secondary);">per year</div>
             </div>
           </div>
@@ -8828,8 +9021,8 @@
             <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Custom Wake Tones &amp; Voice Notes</li>
             <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Wake dashboard &amp; nudge sleepers</li>
           </ul>
-          <button class="btn-gradient plan-btn" data-inr="Get Admin — ₹499/yr" data-usd="Get Admin — $5.99/yr"
-            style="width:100%;font-size:13px;" onclick="activatePlan('admin')"><i data-lucide="zap" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Admin — ₹499/yr</button>
+          <button class="btn-gradient plan-btn"
+            style="width:100%;font-size:13px;" onclick="activatePlan('admin')"><i data-lucide="zap" style="width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Admin — $4.90/yr</button>
         </div>
 
         <!-- ── ORGANISATION ── -->
@@ -8841,8 +9034,11 @@
               <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">For teams &amp; institutions</div>
             </div>
             <div style="text-align:right;">
-              <div class="plan-price" data-inr="₹4,999" data-usd="$59.99"
-                style="font-size:22px;font-weight:900;color:#FFD60A;">₹4,999</div>
+              <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-bottom:2px;">
+                <span style="font-size:12px; text-decoration:line-through; color:var(--text-secondary);">$499</span>
+                <span style="background:#FF453A; color:#fff; font-size:9px; font-weight:700; padding:2px 4px; border-radius:4px;">90% OFF</span>
+              </div>
+              <div class="plan-price" style="font-size:22px;font-weight:900;color:#FFD60A;">$49.90</div>
               <div style="font-size:10px;color:var(--text-secondary);">per year</div>
             </div>
           </div>
@@ -8852,10 +9048,9 @@
             <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Everything in Admin plan</li>
             <li style="display:flex;align-items:center;gap:6px;"><i data-lucide="check" style="width:13px;height:13px;flex-shrink:0;stroke:#4CD964;stroke-width:2.5;fill:none;"></i>Priority support</li>
           </ul>
-          <button class="btn-gradient plan-btn" data-inr="Get Organisation — ₹4,999/yr"
-            data-usd="Get Organisation — $59.99/yr"
+          <button class="btn-gradient plan-btn"
             style="width:100%;font-size:13px;background:linear-gradient(135deg,#FFD60A,#FF9F0A);color:#1C1C1E;font-weight:700;"
-            onclick="activatePlan('organisation')"><i data-lucide="crown" style="width:15px;height:15px;flex-shrink:0;stroke:#1C1C1E;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Organisation — ₹4,999/yr</button>
+            onclick="activatePlan('organisation')"><i data-lucide="crown" style="width:15px;height:15px;flex-shrink:0;stroke:#1C1C1E;fill:none;margin-right:6px;vertical-align:middle;"></i>Get Organisation — $49.90/yr</button>
         </div>
 
         <div style="text-align:center;font-size:11px;color:var(--text-secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:5px;"><i data-lucide="shield-check" style="width:13px;height:13px;flex-shrink:0;stroke:var(--text-secondary);fill:none;"></i> Secure payment via Razorpay</div>

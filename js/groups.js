@@ -261,10 +261,10 @@ function initCreateGroup() {
         }
 
         // Reset emoji to default
-        selectedEmoji = '';
-        document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
-        const defaultEmoji = document.querySelector('.emoji-option');
-        if (defaultEmoji) defaultEmoji.classList.add('selected');
+        const emojiDisplay = document.getElementById('emoji-display-box');
+        if (emojiDisplay) emojiDisplay.innerText = '😀';
+        const emojiInput = document.getElementById('emoji-hidden-input');
+        if (emojiInput) emojiInput.value = '';
 
         const btn = document.getElementById('btn-create-group');
         if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Group'; btn.onclick = doCreateGroup; }
@@ -281,12 +281,13 @@ async function doCreateGroup() {
         showToast('Creating your group…', 'info');
 
         try {
-          const name = document.getElementById('group-name-input')?.value.trim();
+          let name = document.getElementById('group-name-input')?.value.trim();
+          if (typeof sanitizeText === 'function') name = sanitizeText(name);
           const rawMembers = document.getElementById('group-members-input')?.value;
           const expectedMembers = parseInt(rawMembers, 10);
 
-          if (!name) {
-            showToast('Enter a group name', 'error');
+          if (!name || name.length < 1 || name.length > 50) {
+            showToast('Group name must be 1-50 characters', 'error');
             if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
             _creatingGroup = false; return;
           }
@@ -298,14 +299,16 @@ async function doCreateGroup() {
 
           // Single RPC call — handles plan checks, limits, insert, and member add
           const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-          console.log('[Wakeit] Calling create_group_with_member RPC...', { p_name: name, p_emoji: selectedEmoji, p_invite_code: code, p_expected_members: expectedMembers });
+          const emojiDisplay = document.getElementById('emoji-display-box');
+          const finalEmoji = emojiDisplay ? emojiDisplay.innerText : '😀';
+          console.log('[Wakeit] Calling create_group_with_member RPC...');
           const rpcResult = await db.rpc('create_group_with_member', {
             p_name: name,
-            p_emoji: selectedEmoji,
+            p_emoji: finalEmoji,
             p_invite_code: code,
             p_expected_members: expectedMembers
           });
-          console.log('[Wakeit] RPC returned:', JSON.stringify(rpcResult));
+          console.log('[Wakeit] RPC returned:', rpcResult ? 'success' : 'failed');
           const { data: result, error: rpcErr } = rpcResult;
 
           if (rpcErr) {
@@ -549,10 +552,11 @@ async function refreshGroupDetailLiveStatus(group, alarmId) {
         window.refreshIcons();
       }
 
-function selectEmoji(el, emoji) {
-        document.querySelectorAll('.emoji-option').forEach(e => e.classList.remove('selected'));
-        el.classList.add('selected');
-        selectedEmoji = emoji;
+function openEmojiPicker() {
+        const input = document.getElementById('emoji-hidden-input');
+        if (input) {
+          input.focus();
+        }
       }
 
 function shareGroupCode() {
@@ -758,7 +762,7 @@ async function notifyGroupOwner(group) {
             type: 'new-member',
           }
         });
-        console.log('[Wakeit] Owner notified of new member:', joinerName);
+        console.log('[Wakeit] Owner notified of new member');
       }
 
 function openGroupModal() { openModal('modal-groups'); }
@@ -779,7 +783,7 @@ window.renderGroupAlarms = renderGroupAlarms;
 window.removeMember = removeMember;
 window.initGroupDetailLiveStatus = initGroupDetailLiveStatus;
 window.refreshGroupDetailLiveStatus = refreshGroupDetailLiveStatus;
-window.selectEmoji = selectEmoji;
+window.openEmojiPicker = openEmojiPicker;
 window.shareGroupCode = shareGroupCode;
 window.subscribeToGroupAlarms = subscribeToGroupAlarms;
 window.initJoinGroup = initJoinGroup;

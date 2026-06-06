@@ -42,8 +42,25 @@ const corsHeaders = {
  *
  * Body: { alarm_id: string }
  */
+const rateLimitMap = new Map<string, { count: number, resetAt: number }>();
+function checkRateLimit(req: Request) {
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const now = Date.now();
+  let record = rateLimitMap.get(ip);
+  if (!record || record.resetAt < now) {
+    record = { count: 0, resetAt: now + 60000 };
+  }
+  record.count++;
+  rateLimitMap.set(ip, record);
+  return { allowed: record.count <= 20, remaining: Math.max(0, 20 - record.count) };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const rl = checkRateLimit(req);
+  if (!rl.allowed) {
+    return new Response("Too Many Requests", { status: 429, headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } });
+  }
 
   try {
     const { alarm_id } = await req.json();
@@ -66,7 +83,7 @@ Deno.serve(async (req) => {
     if (!alarm.is_active) {
       return new Response(
         JSON.stringify({ success: true, message: "Alarm is inactive, skipping" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Limit": "20" } }
       );
     }
 
@@ -81,7 +98,7 @@ Deno.serve(async (req) => {
     if (userIds.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: "No group members to notify" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Limit": "20" } }
       );
     }
 
@@ -184,13 +201,13 @@ Deno.serve(async (req) => {
         fcm_success: fcmSuccessCount,
         fcm_failed: fcmFailureCount,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Limit": "20" } }
     );
   } catch (err) {
     console.error("[trigger-alarm] Error:", err);
     return new Response(
       JSON.stringify({ error: String(err instanceof Error ? err.message : err) }),
-      { status: 400, headers: corsHeaders }
+      { status: 400, headers: { ...corsHeaders, "X-RateLimit-Limit": "20" } }
     );
   }
 });

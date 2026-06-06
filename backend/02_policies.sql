@@ -154,3 +154,40 @@ CREATE POLICY "Users can create own wake attempts" ON wake_attempts
 CREATE POLICY "Users can update own wake attempts" ON wake_attempts
   FOR UPDATE TO authenticated
   USING (auth.uid() = user_id);
+
+-- =========================================
+-- DEVICE TOKENS POLICIES
+-- =========================================
+ALTER TABLE device_tokens ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own tokens" ON device_tokens
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own tokens" ON device_tokens
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own tokens" ON device_tokens
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id);
+
+-- =========================================
+-- ALARM WAKE STATUS POLICIES
+-- =========================================
+ALTER TABLE alarm_wake_status ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can insert own status" ON alarm_wake_status
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own status" ON alarm_wake_status
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Members can view alarm statuses for their groups" ON alarm_wake_status
+  FOR SELECT TO authenticated
+  USING (
+    group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+  );
+
