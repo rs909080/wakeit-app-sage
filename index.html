@@ -5212,6 +5212,18 @@
         if (!group) {
           showToast('Select a group first', 'error'); return;
         }
+
+        // RATE LIMIT CHECK
+        const nowMs = Date.now();
+        let alarmAttempts = JSON.parse(localStorage.getItem('wakeit_alarm_attempts') || '[]');
+        alarmAttempts = alarmAttempts.filter(t => nowMs - t < 86400000); // 24 hours
+        if (alarmAttempts.length >= 20) {
+          showToast('You can only set up to 20 alarms per day.', 'error');
+          return;
+        }
+        alarmAttempts.push(nowMs);
+        localStorage.setItem('wakeit_alarm_attempts', JSON.stringify(alarmAttempts));
+
         const uid = getCurrentUserId();
 
         // Guard: only the group admin (owner) can create alarms
@@ -5269,6 +5281,9 @@
         if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #fff; border-bottom-color:transparent; border-radius:50%; animation: spin 1s linear infinite; vertical-align:middle; margin-right:8px;"></span>Setting…'; }
 
         const tone = AppState.selectedTone || { name: 'Classic Beep', type: 'default', url: null };
+        if (tone.name && tone.name.length > 100) tone.name = tone.name.substring(0, 100);
+
+        const requiredTaps = parseInt(document.getElementById('alarm-taps-input')?.value || '1', 10);
 
         const { data: alarm, error } = await db.from('alarms').insert({
           group_id: group.id,
@@ -5277,8 +5292,10 @@
           tone_type: tone.type || 'default',
           tone_url: tone.url || null,
           tone_name: tone.name || 'Classic Beep',
-          repeat_type: 'once',
-          is_active: true
+          repeat_type: AppState.alarmRepeatType || 'once',
+          repeat_days: AppState.alarmRepeatDays || null,
+          is_active: true,
+          required_taps: requiredTaps
           // allow_vibration stored locally only — add DB column to persist
         }).select().single();
 
