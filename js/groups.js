@@ -260,12 +260,6 @@ function initCreateGroup() {
             : `<strong style="color:#FF453A;">Member plan</strong> cannot create groups. <a href="javascript:void(0)" onclick="openModal('modal-plans')" style="color:var(--primary);">Upgrade →</a>`;
         }
 
-        // Reset emoji to default
-        const emojiDisplay = document.getElementById('emoji-display-box');
-        if (emojiDisplay) emojiDisplay.innerText = '😀';
-        const emojiInput = document.getElementById('emoji-hidden-input');
-        if (emojiInput) emojiInput.value = '';
-
         const btn = document.getElementById('btn-create-group');
         if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="plus" class="lucide-icon lucide-icon-sm icon-prefix"></i>Create Group'; btn.onclick = doCreateGroup; }
       }
@@ -299,12 +293,9 @@ async function doCreateGroup() {
 
           // Single RPC call — handles plan checks, limits, insert, and member add
           const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-          const emojiDisplay = document.getElementById('emoji-display-box');
-          const finalEmoji = emojiDisplay ? emojiDisplay.innerText : '😀';
           console.log('[Wakeit] Calling create_group_with_member RPC...');
           const rpcResult = await db.rpc('create_group_with_member', {
             p_name: name,
-            p_emoji: finalEmoji,
             p_invite_code: code,
             p_expected_members: expectedMembers
           });
@@ -552,12 +543,6 @@ async function refreshGroupDetailLiveStatus(group, alarmId) {
         window.refreshIcons();
       }
 
-function openEmojiPicker() {
-        const input = document.getElementById('emoji-hidden-input');
-        if (input) {
-          input.focus();
-        }
-      }
 
 function shareGroupCode() {
         const code = document.getElementById('success-invite-code')?.textContent || '';
@@ -783,7 +768,7 @@ window.renderGroupAlarms = renderGroupAlarms;
 window.removeMember = removeMember;
 window.initGroupDetailLiveStatus = initGroupDetailLiveStatus;
 window.refreshGroupDetailLiveStatus = refreshGroupDetailLiveStatus;
-window.openEmojiPicker = openEmojiPicker;
+
 window.shareGroupCode = shareGroupCode;
 window.subscribeToGroupAlarms = subscribeToGroupAlarms;
 window.initJoinGroup = initJoinGroup;

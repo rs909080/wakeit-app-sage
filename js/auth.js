@@ -14,17 +14,7 @@ async function getSafeSession() {
 async function handleUserSessionChange(event, session) {
         console.log('[Wakeit] handleUserSessionChange entered');
         try {
-          // --- Legacy plan migration ---
-          // If user has old 'wakeit_plan' key but no new 'wakeit_plan_type',
-          // create the new key so isPlanActive() works correctly.
-          const legacyPlan = localStorage.getItem('wakeit_plan');
-          const newPlan = localStorage.getItem('wakeit_plan_type');
-          if (legacyPlan && !newPlan) {
-            // Treat any legacy plan as an active free_trial-equivalent
-            localStorage.setItem('wakeit_plan_type', 'free_trial');
-            // Don't set wakeit_plan_start — isPlanActive() treats legacy users as never expiring
-            console.log('[Wakeit] Migrated legacy plan key:', legacyPlan, '→ free_trial');
-          }
+
           // Load profile into AppState
           let { data: prof, error: profErr } = await db.from('profiles').select('*').eq('id', session.user.id).single();
           if (profErr) {
@@ -46,10 +36,7 @@ async function handleUserSessionChange(event, session) {
             }
             prof = { id: session.user.id, name, email, plan_type: 'free_trial' };
 
-            localStorage.setItem('wakeit_plan_type', 'free_trial');
-            if (!localStorage.getItem('wakeit_plan_start')) {
-              localStorage.setItem('wakeit_plan_start', Date.now().toString());
-            }
+
 
             if (event === 'SIGNED_IN') {
               showToast('Account created! ', 'success');
@@ -89,22 +76,8 @@ async function handleUserSessionChange(event, session) {
 
           AppState.profile = prof;
 
-          // Feature 5+6: ALWAYS restore plan from DB into localStorage cache
-          // This is critical: without this, returning users lose their trial status
-          if (prof?.plan_type) {
-            localStorage.setItem('wakeit_plan_type', prof.plan_type);
-          }
-          // Restore plan start for free_trial users so isPlanActive() works
-          if (!localStorage.getItem('wakeit_plan_start')) {
-            // Use profile's plan_started_at or created_at as the trial start
-            const profileStart = prof?.plan_started_at || prof?.created_at;
-            if (profileStart) {
-              localStorage.setItem('wakeit_plan_start', new Date(profileStart).getTime().toString());
-            } else {
-              // Fallback: set it to now (prevents "expired" state)
-              localStorage.setItem('wakeit_plan_start', Date.now().toString());
-            }
-          }
+          // Plan Verification via Edge Function
+          await verifyPlanStatus();
           // Stage 6: request push permission + save FCM Token
           initFirebasePush();
           // Check plan expiry AFTER plan data is restored (safe timing)
@@ -232,18 +205,7 @@ function initLogin() {
               btnLogin.textContent = originalText;
               return;
             }
-            // Ensure plan is set — returning users who have no plan get free_trial
-            if (!localStorage.getItem('wakeit_plan_type')) {
-              // Check DB for stored plan, otherwise default to free_trial
-              db.from('profiles').select('plan_type').eq('id', loginData.user.id).single()
-                .then(({ data: prof }) => {
-                  const pt = prof?.plan_type || 'free_trial';
-                  localStorage.setItem('wakeit_plan_type', pt);
-                  if (pt === 'free_trial' && !localStorage.getItem('wakeit_plan_start')) {
-                    localStorage.setItem('wakeit_plan_start', Date.now().toString());
-                  }
-                });
-            }
+
             showToast('Welcome back! ', 'success');
             // Navigate to home immediately on success
             navigate('#/home');
@@ -348,202 +310,178 @@ function initSettings() {
       }
 
 function getUserPlanLimits(planType) {
-        return PLAN_LIMITS[planType || getPlanType()] || PLAN_LIMITS.free_trial;
-      }
+  return PLAN_LIMITS[planType || getPlanType()] || PLAN_LIMITS.free_trial;
+}
+
+window.verifyPlanStatus = async function() {
+  if (!AppState.user) return { type: null, active: false };
+  try {
+    const { data, error } = await db.functions.invoke('verify-plan');
+    if (error) throw error;
+    AppState.planVerification = { type: data.plan_type, active: data.is_active, expiresAt: data.expired_at };
+    return AppState.planVerification;
+  } catch (e) {
+    console.warn('[Wakeit] verify-plan error:', e);
+    return AppState.planVerification || { type: null, active: false };
+  }
+};
 
 function getPlanType() {
-        // Prefer the new key, fall back to legacy key for backwards compat
-        const newKey = localStorage.getItem('wakeit_plan_type');
-        if (newKey) return newKey;
-        // Migrate legacy values to new format
-        const legacy = localStorage.getItem('wakeit_plan');
-        if (legacy === 'free' || legacy === 'pro') return 'free_trial'; // treat old 'free'/'pro' as active
-        return null;
-      }
+  return AppState.planVerification?.type || null;
+}
 
 function isPlanActive() {
-        const type = getPlanType();
-        if (!type) return false;
-        // Paid plans are always active
-        if (type === 'member' || type === 'admin' || type === 'organisation' || type === 'pro') return true;
-        if (type === 'free_trial' || type === 'free') {
-          let start = parseInt(localStorage.getItem('wakeit_plan_start') || '0');
-          if (!start) {
-            // Plan start missing (new device, cleared storage, etc.)
-            // If user is authenticated, auto-set it now so trial begins fresh
-            if (AppState.user) {
-              start = Date.now();
-              localStorage.setItem('wakeit_plan_start', start.toString());
-            } else {
-              return false;
-            }
-          }
-          const DAYS_3 = 3 * 24 * 60 * 60 * 1000;
-          return (Date.now() - start) < DAYS_3;
-        }
-        return false;
-      }
+  return AppState.planVerification?.active || false;
+}
 
 function checkPlanExpiry() {
-        // Don't check before auth resolves — we might not have plan data yet
-        if (!AppState.user) return;
-        if (isPlanActive()) {
-          // Plan is active — remove any lingering expiry banner
-          removeExpiryBanner();
-          return;
-        }
-        const type = getPlanType();
-        if (type === 'free_trial') {
-          // Free trial expired — show UI but DON'T remove localStorage
-          // (removing it causes a destructive loop on next login)
-          showExpiryUI('Your 3-day free trial has ended. Choose a plan to continue ');
-        } else if (type && type !== 'free_trial') {
-          // Paid plan expired
-          showExpiryUI('Your plan has expired. Renew to keep full access ');
-        }
-        // If no plan type at all, showPlansModalIfNeeded handles it
-      }
+  if (!AppState.user) return;
+  if (isPlanActive()) {
+    removeExpiryBanner();
+    return;
+  }
+  const type = getPlanType();
+  if (type === 'free_trial') {
+    showExpiryUI('Your 3-day free trial has ended. Choose a plan to continue ');
+  } else if (type && type !== 'free_trial') {
+    showExpiryUI('Your plan has expired. Renew to keep full access ');
+  }
+}
 
 async function showPlansModalIfNeeded() {
-        try {
-          // If user already saw the onboarding pricing popup, don't show again
-          if (localStorage.getItem('hasSeenPricingOnboarding') === 'true') return;
+  try {
+    if (localStorage.getItem('hasSeenPricingOnboarding') === 'true') return;
+    const planType = getPlanType();
+    if (!planType) {
+      localStorage.setItem('hasSeenPricingOnboarding', 'true');
+      openModal('modal-plans');
+    } else {
+      localStorage.setItem('hasSeenPricingOnboarding', 'true');
+      checkPlanExpiry();
+    }
+  } catch (e) {
+    console.warn('[Wakeit] showPlansModalIfNeeded error (non-fatal):', e);
+  }
+}
 
-          if (!getPlanType()) {
-            // Also check Supabase for a server-side plan record
-            const uid = getCurrentUserId();
-            if (uid) {
-              let prof = null;
-              try {
-                const { data } = await db.from('profiles')
-                  .select('plan_type, plan_expires_at, plan_started_at').eq('id', uid).single();
-                prof = data;
-              } catch (_) { /* network error or no row — ignore */ }
+async function grantFreeTrial() {
+  try {
+    const { data, error } = await db.rpc('activate_free_trial');
+    if (error) throw error;
+    if (data && data.error) {
+      showToast(data.error, 'error');
+      openModal('modal-plans');
+      return;
+    }
+    await verifyPlanStatus();
+    showToast(' Free trial started! 3 days of full access.', 'success');
+    navigate('#/home');
+  } catch(e) {
+    showToast('Could not activate free trial.', 'error');
+  }
+}
 
-              if (prof?.plan_type) {
-                // Restore from DB — sync all plan data
-                localStorage.setItem('wakeit_plan_type', prof.plan_type);
-                if (prof.plan_type === 'free_trial' && !localStorage.getItem('wakeit_plan_start')) {
-                  // Use server start time if available, else now
-                  const startTime = prof.plan_started_at
-                    ? new Date(prof.plan_started_at).getTime()
-                    : Date.now();
-                  localStorage.setItem('wakeit_plan_start', startTime.toString());
-                }
-                localStorage.setItem('hasSeenPricingOnboarding', 'true');
-                // Re-check expiry with synced data
-                checkPlanExpiry();
-                return;
-              }
-            }
-            // No plan found — show modal immediately, mark as seen
-            localStorage.setItem('hasSeenPricingOnboarding', 'true');
-            openModal('modal-plans');
-          } else {
-            // Has a plan — mark as seen so we don't bother them
-            localStorage.setItem('hasSeenPricingOnboarding', 'true');
-            // But still check expiry
-            checkPlanExpiry();
-          }
-        } catch (e) {
-          // Never crash login/signup flow due to pricing logic
-          console.warn('[Wakeit] showPlansModalIfNeeded error (non-fatal):', e);
-        }
+async function activatePlan(planType) {
+  closeModal('modal-plans');
+  if (planType === 'free_trial') {
+    await grantFreeTrial();
+    return;
+  }
+
+  // Paid plans — open Razorpay
+  const price = PLAN_PRICES[planType];
+  if (!price) { showToast('Unknown plan type', 'error'); return; }
+
+  const userEmail = AppState.user?.email || '';
+  const options = {
+    key: RAZORPAY_KEY,
+    amount: price.amount,
+    currency: 'USD',
+    name: 'Wakeit',
+    description: price.desc,
+    image: '/icon-192.png',
+    prefill: { email: userEmail },
+    theme: { color: '#C84BFF' },
+    modal: {
+      ondismiss: () => {
+        showToast('Payment cancelled.', 'info');
+        openModal('modal-plans');
       }
+    },
+    handler: async (response) => {
+      await persistPlan(planType, response.razorpay_payment_id || '');
+      const labels = { member: 'Member', admin: 'Admin', organisation: 'Organisation' };
+      showToast(`${labels[planType] || planType} plan activated! `, 'success');
+      navigate('#/home');
+    }
+  };
 
-      async function activatePlan(planType) {
-        closeModal('modal-plans');
+  if (!window.Razorpay) {
+    showToast('Payment is loading, please try again in 2 seconds.', 'warning');
+    return;
+  }
 
-        if (planType === 'free_trial') {
-          await grantFreeTrial();
-          return;
-        }
-
-        // Paid plans — open Razorpay
-        const price = PLAN_PRICES[planType];
-        if (!price) { showToast('Unknown plan type', 'error'); return; }
-
-        const userEmail = AppState.user?.email || '';
-        const options = {
-          key: RAZORPAY_KEY,
-          amount: price.amount,
-          currency: 'USD',
-          name: 'Wakeit',
-          description: price.desc,
-          image: '/icon-192.png',
-          prefill: { email: userEmail },
-          theme: { color: '#C84BFF' },
-          modal: {
-            ondismiss: () => {
-              showToast('Payment cancelled.', 'info');
-              openModal('modal-plans');
-            }
-          },
-          handler: async (response) => {
-            await persistPlan(planType, response.razorpay_payment_id || '');
-            const labels = { member: 'Member', admin: 'Admin', organisation: 'Organisation' };
-            showToast(`${labels[planType] || planType} plan activated! `, 'success');
-            navigate('#/home');
-          }
-        };
-
-        if (!window.Razorpay) {
-          showToast('Payment is loading, please try again in 2 seconds.', 'warning');
-          return;
-        }
-
-        try {
-          new Razorpay(options).open();
-        } catch (e) {
-          showToast('Payment system unavailable. Please try again.', 'error');
-          openModal('modal-plans');
-        }
-      }
+  try {
+    new Razorpay(options).open();
+  } catch (e) {
+    showToast('Payment system unavailable. Please try again.', 'error');
+    openModal('modal-plans');
+  }
+}
 
 async function persistPlan(planType, paymentId) {
-        const uid = getCurrentUserId();
-        localStorage.setItem('wakeit_plan_type', planType);
-        // Remove expiry banner immediately on plan activation
-        removeExpiryBanner();
-        if (uid) {
-          try {
-            await db.from('profiles').update({
-              plan_type: planType,
-              plan_started_at: new Date().toISOString(),
-              rzp_payment_id: paymentId || null
-            }).eq('id', uid);
-          } catch (e) {
-            console.warn('[Wakeit] Could not persist plan to DB:', e);
-          }
-        }
-      }
+  const uid = getCurrentUserId();
+  removeExpiryBanner();
+  if (uid) {
+    try {
+      await db.from('profiles').update({
+        plan_type: planType,
+        plan_started_at: new Date().toISOString(),
+        rzp_payment_id: paymentId || null,
+        plan_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      }).eq('id', uid);
+    } catch (e) {
+      console.warn('[Wakeit] Could not persist plan to DB:', e);
+    }
+  }
+  await verifyPlanStatus();
+  updateSettingsPlanCard();
+}
 
 function updateSettingsPlanCard() {
-        const pill = document.getElementById('settings-plan-pill');
-        const label = document.getElementById('settings-plan-label');
+  const pill = document.getElementById('settings-plan-pill');
+  const label = document.getElementById('settings-plan-label');
 
-        const planType = localStorage.getItem('wakeit_plan_type');
+  const planType = getPlanType();
+  const active = isPlanActive();
 
-        if (planType === 'organisation') {
-          if (pill) { pill.className = 'plan-pill pill-pro'; pill.textContent = ' Organisation'; }
-          if (label) label.textContent = 'Organisation plan · up to 10 groups, 50 members';
-        } else if (planType === 'admin') {
-          if (pill) { pill.className = 'plan-pill pill-pro'; pill.textContent = ' Admin'; }
-          if (label) label.textContent = 'Admin plan · up to 5 groups, 20 members';
-        } else if (planType === 'member') {
-          if (pill) { pill.className = 'plan-pill pill-free'; pill.textContent = ' Member'; }
-          if (label) label.textContent = 'Member plan · join groups only · ₹49/yr';
-        } else if (planType === 'free_trial') {
-          const days = getFreeDaysLeft();
-          if (pill) { pill.className = 'plan-pill pill-free'; pill.textContent = ' Free Trial'; }
-          if (label) label.textContent = days > 0
-            ? `${days} day${days !== 1 ? 's' : ''} left · all features unlocked`
-            : 'Free trial expired';
-        } else {
-          if (pill) { pill.className = 'plan-pill pill-trial'; pill.textContent = 'No Plan'; }
-          if (label) label.textContent = 'No active plan';
-        }
+  if (planType === 'organisation') {
+    if (pill) { pill.className = 'plan-pill pill-pro'; pill.textContent = ' Organisation'; }
+    if (label) label.textContent = active ? 'Organisation plan · up to 10 groups, 50 members' : 'Organisation plan expired';
+  } else if (planType === 'admin') {
+    if (pill) { pill.className = 'plan-pill pill-pro'; pill.textContent = ' Admin'; }
+    if (label) label.textContent = active ? 'Admin plan · up to 5 groups, 20 members' : 'Admin plan expired';
+  } else if (planType === 'member') {
+    if (pill) { pill.className = 'plan-pill pill-free'; pill.textContent = ' Member'; }
+    if (label) label.textContent = active ? 'Member plan · join groups only · $1/yr' : 'Member plan expired';
+  } else if (planType === 'free_trial') {
+    if (pill) { pill.className = 'plan-pill pill-free'; pill.textContent = ' Free Trial'; }
+    if (active) {
+      const expires = AppState.planVerification?.expiresAt;
+      if (expires) {
+        const days = Math.max(0, Math.ceil((new Date(expires) - new Date()) / (1000 * 60 * 60 * 24)));
+        if (label) label.textContent = `${days} day${days !== 1 ? 's' : ''} left · all features unlocked`;
+      } else {
+        if (label) label.textContent = 'Free trial active';
       }
+    } else {
+      if (label) label.textContent = 'Free trial expired';
+    }
+  } else {
+    if (pill) { pill.className = 'plan-pill pill-trial'; pill.textContent = 'No Plan'; }
+    if (label) label.textContent = 'No active plan';
+  }
+}
 
 
 // Global exports for backward compatibility with inline HTML and cross-module calls
@@ -559,6 +497,7 @@ window.isPlanActive = isPlanActive;
 window.checkPlanExpiry = checkPlanExpiry;
 window.showPlansModalIfNeeded = showPlansModalIfNeeded;
 window.activatePlan = activatePlan;
+window.grantFreeTrial = grantFreeTrial;
 window.persistPlan = persistPlan;
 window.updateSettingsPlanCard = updateSettingsPlanCard;
 
