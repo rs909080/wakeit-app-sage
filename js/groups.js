@@ -575,6 +575,7 @@ function subscribeToGroupAlarms(groupIds) {
                   alarm_time: payload.alarm_time,
                   tone_name: payload.tone_name,
                   tone_url: payload.tone_url,
+                  required_taps: payload.required_taps,
                 });
               }).subscribe();
           }

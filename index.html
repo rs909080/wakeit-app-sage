@@ -4225,12 +4225,12 @@
             const { error: upsertErr } = await db.from('profiles').upsert({
               id: session.user.id,
               name,
-              email,
-              plan_type: 'free_trial'
+              email
             }, { onConflict: 'id' });
             if (upsertErr) {
               console.error('[Wakeit] Profile creation error:', upsertErr.message);
             }
+            await db.rpc('activate_free_trial');
             prof = { id: session.user.id, name, email, plan_type: 'free_trial' };
 
 
@@ -6353,6 +6353,7 @@
                   alarm_time: payload.alarm_time,
                   tone_name: payload.tone_name,
                   tone_url: payload.tone_url,
+                  required_taps: payload.required_taps,
                 });
               }).subscribe();
           }
@@ -6993,19 +6994,19 @@
 
         let alarm = AppState.ringingAlarm;
         
-        // Guard against duplicate submissions
-        const dedupeKey = `wake_attempt_${alarm?.id}_${status}`;
-        if (sessionStorage.getItem(dedupeKey)) {
-           return;
-        }
-        sessionStorage.setItem(dedupeKey, 'true');
-
         const reqTaps = alarm ? (parseInt(alarm.required_taps) || 1) : 1;
 
         if (status === 'awake') {
           // ---- INSTANT local increment — no await, no race condition ----
           AppState.localWakeTapCount += 1;
           const currentTap = AppState.localWakeTapCount;
+
+          // Guard against duplicate submissions for this specific tap
+          const dedupeKey = `wake_attempt_${alarm?.id}_${status}_${currentTap}`;
+          if (sessionStorage.getItem(dedupeKey)) {
+             return;
+          }
+          sessionStorage.setItem(dedupeKey, 'true');
 
           // --- Fill the corresponding progress dot (index = currentTap - 1) ---
           if (reqTaps > 1) {
@@ -7031,6 +7032,10 @@
             }
             return; 
           }
+        } else {
+          const dedupeKey = `wake_attempt_${alarm?.id}_${status}`;
+          if (sessionStorage.getItem(dedupeKey)) return;
+          sessionStorage.setItem(dedupeKey, 'true');
         }
 
         // --- FINAL DISMISSAL REACHED ---
@@ -7056,6 +7061,11 @@
               status: status,
               attempt_number: attemptNumber
             });
+
+            // Update alarm_wake_status so it doesn't ring again
+            await db.from('alarm_wake_status').update({
+              status: status
+            }).eq('alarm_id', alarm.id).eq('user_id', uid);
           } catch (e) {
             console.warn('[Wakeit] Failed to record wake attempt:', e);
           }

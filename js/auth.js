@@ -164,10 +164,11 @@ function initLogin() {
               db.from('profiles').upsert({
                 id: data.user.id,
                 name,
-                email,
-                plan_type: 'free_trial'
-              }, { onConflict: 'id' }).then(({ error: pErr }) => {
+                email
+              }, { onConflict: 'id' }).then(async ({ error: pErr }) => {
                 if (pErr) console.warn('[Wakeit] profile upsert:', pErr.message);
+                // After profile is created, call activate_free_trial
+                await db.rpc('activate_free_trial');
               });
             }
 
