@@ -65,6 +65,7 @@ CREATE TABLE alarms (
   tone_name text DEFAULT 'Default',
   tone_url text,
   is_active boolean DEFAULT true,
+  required_taps int DEFAULT 1,
   created_at timestamp with time zone DEFAULT now()
 );
 

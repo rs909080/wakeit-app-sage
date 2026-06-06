@@ -8,6 +8,11 @@ function updateClocks() {
       }
 
 function AlarmCard(alarm) {
+        const toggleHtml = alarm.isOwner ? `
+          <label class="toggle">
+            <input type="checkbox" ${alarm.active ? 'checked' : ''} onchange="toggleAlarmStatus('${alarm.id}', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>` : '';
         return `
         <div class="alarm-card" id="alarm-${alarm.id}">
           <div>
@@ -15,10 +20,7 @@ function AlarmCard(alarm) {
             <div class="alarm-card-label">${alarm.group}</div>
             <div class="alarm-card-tone"><i data-lucide="bell" class="lucide-icon lucide-icon-sm icon-prefix"></i>${alarm.tone}</div>
           </div>
-          <label class="toggle">
-            <input type="checkbox" ${alarm.active ? 'checked' : ''} onchange="toggleAlarmStatus('${alarm.id}', this.checked)" />
-            <span class="toggle-slider"></span>
-          </label>
+          ${toggleHtml}
         </div>`;
       }
 
@@ -107,9 +109,13 @@ function renderHomeAlarms(alarms, groupMap, list, nextCard) {
         const nextTimeStr = nextDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         if (nextCard) nextCard.textContent = nextTimeStr;
         const nextToggle = document.getElementById('next-alarm-toggle');
+        const isNextOwner = AppState.ownedGroupIds.has(next.group_id);
         if (nextToggle) {
           nextToggle.checked = next.is_active;
           nextToggle.setAttribute('data-alarm-id', next.id);
+          if (nextToggle.parentElement) {
+            nextToggle.parentElement.style.display = isNextOwner ? '' : 'none';
+          }
         }
         const nextLabelEl = document.getElementById('next-alarm-label');
         const nextGroup = groupMap[next.group_id];
@@ -119,7 +125,8 @@ function renderHomeAlarms(alarms, groupMap, list, nextCard) {
         if (list) list.innerHTML = alarms.map(a => {
           const g = groupMap[a.group_id];
           const timeStr = new Date(a.alarm_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-          return AlarmCard({ id: a.id, time: timeStr, group: `${g?.emoji || ''} ${g?.name || ''}`, tone: a.tone_name || 'Default', active: a.is_active });
+          const isOwner = AppState.ownedGroupIds.has(a.group_id);
+          return AlarmCard({ id: a.id, time: timeStr, group: `${g?.emoji || ''} ${g?.name || ''}`, tone: a.tone_name || 'Default', active: a.is_active, isOwner });
         }).join('');
       }
 
@@ -254,6 +261,8 @@ async function doSetAlarm() {
         const tone = AppState.selectedTone || { name: 'Classic Beep', type: 'default', url: null };
         if (tone.name && tone.name.length > 100) tone.name = tone.name.substring(0, 100);
 
+        const requiredTaps = parseInt(document.getElementById('alarm-taps-input')?.value || '1', 10);
+
         const { data: alarm, error } = await db.from('alarms').insert({
           group_id: group.id,
           created_by: uid,
@@ -263,7 +272,8 @@ async function doSetAlarm() {
           tone_name: tone.name || 'Classic Beep',
           repeat_type: AppState.alarmRepeatType || 'once',
           repeat_days: AppState.alarmRepeatDays || null,
-          is_active: true
+          is_active: true,
+          required_taps: requiredTaps
           // allow_vibration stored locally only — add DB column to persist
         }).select().single();
 

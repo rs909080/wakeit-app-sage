@@ -3354,6 +3354,18 @@
                 </label>
               </div>
 
+              <div class="option-row" style="cursor:default;">
+                <div>
+                  <span class="option-label"><i data-lucide="hand" class="lucide-icon icon-prefix"></i>Taps to wake</span>
+                  <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Taps required to dismiss</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <button class="icon-btn" onclick="const i=document.getElementById('alarm-taps-input'); i.value=Math.max(1, parseInt(i.value)-1)"><i data-lucide="minus" class="lucide-icon lucide-icon-sm"></i></button>
+                  <input type="number" id="alarm-taps-input" value="1" min="1" max="20" style="width:30px; text-align:center; background:transparent; border:none; color:var(--text-primary); font-size:16px; font-weight:bold; pointer-events:none;" readonly />
+                  <button class="icon-btn" onclick="const i=document.getElementById('alarm-taps-input'); i.value=Math.min(20, parseInt(i.value)+1)"><i data-lucide="plus" class="lucide-icon lucide-icon-sm"></i></button>
+                </div>
+              </div>
+
               <div class="option-row" onclick="openRepeatModal()">
                 <span class="option-label"><i data-lucide="calendar" class="lucide-icon icon-prefix"></i>Repeat</span>
                 <span class="option-value" id="alarm-repeat-label">Once <span class="chevron"><i data-lucide="chevron-right" class="lucide-icon lucide-icon-sm"></i></span></span>
@@ -3753,7 +3765,7 @@
                 <button class="wake-btn-hero" id="btn-i-am-awake" onclick="recordWakeAttempt('awake')">
                   <div class="wake-btn-icon">🌞</div>
                   <div class="wake-btn-label">I'm Awake</div>
-                  <div class="wake-btn-sub" id="wake-awake-count">Tapped 0/5 times</div>
+                  <div class="wake-btn-sub" id="wake-awake-count">Tapped 0/1 times</div>
                 </button>
 
                 <!-- Secondary "Still Sleeping" button -->
@@ -4549,6 +4561,11 @@
       }
 
       function AlarmCard(alarm) {
+        const toggleHtml = alarm.isOwner ? `
+          <label class="toggle">
+            <input type="checkbox" ${alarm.active ? 'checked' : ''} onchange="toggleAlarmStatus('${alarm.id}', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>` : '';
         return `
         <div class="alarm-card" id="alarm-${alarm.id}">
           <div>
@@ -4556,10 +4573,7 @@
             <div class="alarm-card-label">${alarm.group}</div>
             <div class="alarm-card-tone"><i data-lucide="bell" class="lucide-icon lucide-icon-sm icon-prefix"></i>${alarm.tone}</div>
           </div>
-          <label class="toggle">
-            <input type="checkbox" ${alarm.active ? 'checked' : ''} onchange="toggleAlarmStatus('${alarm.id}', this.checked)" />
-            <span class="toggle-slider"></span>
-          </label>
+          ${toggleHtml}
         </div>`;
       }
 
@@ -5018,9 +5032,13 @@
         const nextTimeStr = nextDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         if (nextCard) nextCard.textContent = nextTimeStr;
         const nextToggle = document.getElementById('next-alarm-toggle');
+        const isNextOwner = AppState.ownedGroupIds.has(next.group_id);
         if (nextToggle) {
           nextToggle.checked = next.is_active;
           nextToggle.setAttribute('data-alarm-id', next.id);
+          if (nextToggle.parentElement) {
+            nextToggle.parentElement.style.display = isNextOwner ? '' : 'none';
+          }
         }
         const nextLabelEl = document.getElementById('next-alarm-label');
         const nextGroup = groupMap[next.group_id];
@@ -5030,7 +5048,8 @@
         if (list) list.innerHTML = alarms.map(a => {
           const g = groupMap[a.group_id];
           const timeStr = new Date(a.alarm_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-          return AlarmCard({ id: a.id, time: timeStr, group: `${g?.emoji || ''} ${g?.name || ''}`, tone: a.tone_name || 'Default', active: a.is_active });
+          const isOwner = AppState.ownedGroupIds.has(a.group_id);
+          return AlarmCard({ id: a.id, time: timeStr, group: `${g?.emoji || ''} ${g?.name || ''}`, tone: a.tone_name || 'Default', active: a.is_active, isOwner });
         }).join('');
       }
 
@@ -7093,7 +7112,8 @@
 
           const awakeEl = document.getElementById('wake-awake-count');
           const sleepEl = document.getElementById('wake-sleeping-count');
-          if (awakeEl) awakeEl.textContent = `Tapped ${displayCount}/5 times`;
+          const reqTaps = parseInt(AppState.ringingAlarm?.required_taps) || 1;
+          if (awakeEl) awakeEl.textContent = `Tapped ${displayCount}/${reqTaps} times`;
           if (sleepEl) sleepEl.textContent = '';
         } catch (e) { /* non-critical */ }
       }
