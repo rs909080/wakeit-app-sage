@@ -4184,6 +4184,8 @@
         profile: null      // set by auth listener
       };
 
+      let wakeChannel = null; // Realtime channel for current user's own wake status
+
       function getCurrentUserId() {
         return AppState.user ? AppState.user.id : null;
       }

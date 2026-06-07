@@ -122,7 +122,7 @@ self.addEventListener('push', (event) => {
   catch (e) { data = { type: 'info', title: 'Wakeit', body: event.data.text() }; }
 
   /* ── type: 'alarm' — alarm is about to ring ── */
-  if (data.type === 'alarm') {
+  if (data.type === 'alarm' || data.type === 'alarm-ring') {
     event.waitUntil(
       self.registration.showNotification(data.title || ' Alarm Ringing!', {
         body: data.body || 'Your group alarm is ringing. Tap to open Wakeit.',

@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     // 1. Fetch the alarm details
     const { data: alarm, error: alarmErr } = await supabaseAdmin
       .from("alarms")
-      .select("id, group_id, alarm_time, tone_name, tone_url, is_active, required_taps, created_by")
+      .select("id, group_id, alarm_time, tone_name, tone_url, is_active, required_taps, created_by, difficulty")
       .eq("id", alarm_id)
       .single();
 
@@ -115,7 +115,8 @@ Deno.serve(async (req) => {
         tone_name: alarm.tone_name,
         tone_url: alarm.tone_url,
         created_by: alarm.created_by,
-        required_taps: alarm.required_taps || 1
+        required_taps: alarm.required_taps || 1,
+        difficulty: alarm.difficulty || 'easy'
       }
     });
 
@@ -139,13 +140,14 @@ Deno.serve(async (req) => {
       const fcmResponse = await messaging.sendEachForMulticast({
         tokens,
         data: {
-          type: "alarm-ring",
+          type: "alarm",
           alarm_id: String(alarm.id),
           group_id: String(alarm.group_id),
           tone_name: alarm.tone_name || "Default",
           tone_url: alarm.tone_url || "",
           created_by: String(alarm.created_by || ""),
           required_taps: String(alarm.required_taps || 1),
+          difficulty: String(alarm.difficulty || 'easy'),
         },
         android: {
           priority: "high",
