@@ -171,6 +171,10 @@ function initCreateAlarm() {
         const vibToggle = document.getElementById('alarm-vibration-toggle');
         if (vibToggle) vibToggle.checked = true;
 
+        // Reset difficulty to Easy
+        alarmDifficulty = 'easy';
+        if (window.setAlarmDifficulty) window.setAlarmDifficulty('easy');
+
         drawDialTicks();
         updateDial(dialAngle);
 
