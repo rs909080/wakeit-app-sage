@@ -5360,9 +5360,9 @@
         const mRaw = totalMins % 60;
         let hours = dialAMPM === 'PM' && hRaw !== 12 ? hRaw + 12 : (dialAMPM === 'AM' && hRaw === 12 ? 0 : hRaw);
 
-        const now = new Date();
-        const alarmDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, mRaw, 0, 0);
-        if (alarmDate <= now) alarmDate.setDate(alarmDate.getDate() + 1); // Schedule for tomorrow if past
+        const serverNow = new Date(Date.now() + (window.clockOffset || 0));
+        const alarmDate = new Date(serverNow.getFullYear(), serverNow.getMonth(), serverNow.getDate(), hours, mRaw, 0, 0);
+        if (alarmDate <= serverNow) alarmDate.setDate(alarmDate.getDate() + 1); // Schedule for tomorrow if past
 
         const btn = document.getElementById('btn-set-alarm');
         if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #fff; border-bottom-color:transparent; border-radius:50%; animation: spin 1s linear infinite; vertical-align:middle; margin-right:8px;"></span>Setting…'; }
@@ -5381,7 +5381,8 @@
           repeat_days: AppState.alarmRepeatDays || null,
           is_active: true,
           vibration: alarmVibration,
-          difficulty: alarmDifficulty
+          difficulty: alarmDifficulty,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }).select().single();
 
         if (error) {
@@ -5416,12 +5417,15 @@
 
       function scheduleLocalNotification(alarm) {
         if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+        const alarmTime = new Date(alarm.alarm_time).getTime();
         navigator.serviceWorker.controller.postMessage({
           type: 'schedule-local',
           alarm_id: alarm.id,
-          time_string: alarm.time_string
+          alarm_time: alarmTime,
+          time_string: alarm.time_string,
+          clockOffset: window.clockOffset || 0
         });
-        console.log('[Wakeit] Scheduled local notification via SW:', alarm.time_string);
+        console.log('[Wakeit] Sent schedule-local message to SW for alarm:', alarm.id);
       }
 
       function cancelLocalNotification(alarmId) {
@@ -6456,7 +6460,6 @@
       /* ── LAYER 3: Local alarm scheduler — deduped ── */
       function scheduleLocalAlarm(alarm) {
         if (!alarm || !alarm.id) return;
-        if (AppState.scheduledAlarmIds.has(alarm.id)) return; // already scheduled
 
         const serverTimeNow = Date.now() + (window.clockOffset || 0);
         const alarmTime = new Date(alarm.alarm_time).getTime();
@@ -6475,20 +6478,26 @@
           console.log('[Wakeit] Late-ring recovery — firing alarm immediately (was offline):', alarm.id);
         }
 
-        AppState.scheduledAlarmIds.add(alarm.id);
+        // Limit client-side timers to 5 minutes to avoid browser throttling issues
+        if (delay <= 5 * 60 * 1000) {
+          if (AppState.scheduledAlarmIds.has(alarm.id)) return; // already scheduled
+          AppState.scheduledAlarmIds.add(alarm.id);
 
-        // Preload audio ~10 seconds before ring time
-        const preloadDelay = Math.max(0, delay - 10000);
-        setTimeout(() => preloadAlarmAudio(alarm), preloadDelay);
+          // Preload audio ~10 seconds before ring time
+          const preloadDelay = Math.max(0, delay - 10000);
+          setTimeout(() => preloadAlarmAudio(alarm), preloadDelay);
 
-        // Schedule the in-app trigger
-        setTimeout(() => {
-          AppState.scheduledAlarmIds.delete(alarm.id);
-          triggerAlarm(alarm);
-        }, delay);
+          // Schedule the in-app trigger
+          setTimeout(() => {
+            AppState.scheduledAlarmIds.delete(alarm.id);
+            triggerAlarm(alarm);
+          }, delay);
 
-        // Schedule push notification via SW (Layer 3b)
-        scheduleLocalNotification(alarm);
+          // Schedule push notification via SW (Layer 3b)
+          scheduleLocalNotification(alarm);
+        } else {
+          console.log('[Wakeit] Alarm is > 5 minutes away, skipping client-side setTimeout scheduling. ID:', alarm.id);
+        }
       }
 
       /* ── Audio Preloader — loads tone URL into browser cache for instant playback ── */
@@ -9015,6 +9024,21 @@
         // ----------------------------------------------
         try {
           syncServerTime();
+          
+          // Visibility Change Listener - reschedule missing alarms when user returns
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              console.log('[Wakeit] App became visible — running visibility check and rescheduling...');
+              syncServerTime();
+              loadHomeAlarms();
+            }
+          });
+
+          // Periodic check every 1 minute to pull active alarms and schedule ones within 5 minutes
+          setInterval(() => {
+            console.log('[Wakeit] Running periodic 1-minute alarm sync...');
+            loadHomeAlarms();
+          }, 60000);
           
           // Recheck plan status every 30 minutes while app is open
           setInterval(async () => {

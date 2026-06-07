@@ -212,6 +212,8 @@ self.addEventListener('push', (event) => {
   }
 });
 
+const activeTimeouts = new Map(); // alarm_id -> timeout_id
+
 /* ── Message: SKIP_WAITING + schedule/cancel local notifications ── */
 self.addEventListener('message', async (event) => {
   if (!event.data) return;
@@ -221,35 +223,74 @@ self.addEventListener('message', async (event) => {
   }
 
   if (event.data.type === 'schedule-local') {
-    const timeString = event.data.time_string;
-    if (timeString && 'showTrigger' in Notification.prototype) {
-      const [hours, minutes] = timeString.split(':').map(Number);
-      const now = new Date();
-      let targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
-      if (targetDate < now) {
-        targetDate.setDate(targetDate.getDate() + 1);
-      }
+    const alarmId = event.data.alarm_id;
+    const alarmTime = event.data.alarm_time; // UTC millisecond timestamp
+    const clockOffset = event.data.clockOffset || 0;
 
-      await self.registration.showNotification(' Wakeit Alarm!', {
-        body: 'Your alarm is ringing. Wake up!',
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        tag: `wakeit-alarm-local-${event.data.alarm_id}`,
-        requireInteraction: true,
-        vibrate: [300, 100, 300, 100, 300],
-        data: { url: '/#/alarm-ringing', type: 'alarm' },
-        actions: [
-          { action: 'open', title: ' Open Wakeit' },
-          { action: 'dismiss', title: '✖ Dismiss' },
-        ],
-        showTrigger: new TimestampTrigger(targetDate.getTime())
-      });
+    // Clear any existing backup timeout for this alarm
+    if (activeTimeouts.has(alarmId)) {
+      clearTimeout(activeTimeouts.get(alarmId));
+      activeTimeouts.delete(alarmId);
+    }
+
+    // Calculate delay
+    const serverNow = Date.now() + clockOffset;
+    const delay = alarmTime - serverNow - 3000; // 3 seconds early buffer, matching client
+
+    if (delay > 0 && delay <= 5 * 60 * 1000) {
+      console.log('[SW] Scheduling backup setTimeout for alarm:', alarmId, 'delay:', delay, 'ms');
+
+      // Use event.waitUntil to keep the service worker alive
+      event.waitUntil(
+        new Promise((resolve) => {
+          const tid = setTimeout(async () => {
+            activeTimeouts.delete(alarmId);
+            console.log('[SW] Backup setTimeout fired for alarm:', alarmId);
+
+            // Check if notification is already showing
+            const notifications = await self.registration.getNotifications();
+            const alreadyShowing = notifications.some(n => 
+              n.tag === 'wakeit-alarm' && n.data && n.data.alarm_id === alarmId
+            );
+
+            if (!alreadyShowing) {
+              await self.registration.showNotification('⏰ Wakeit Alarm!', {
+                body: 'Your group alarm is ringing. Wake up!',
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+                tag: 'wakeit-alarm',
+                requireInteraction: true,
+                vibrate: [300, 100, 300, 100, 300],
+                data: { url: '/#/alarm-ringing', type: 'alarm', alarm_id: alarmId },
+                actions: [
+                  { action: 'open', title: ' Open Wakeit' },
+                  { action: 'dismiss', title: '✖ Dismiss' },
+                ],
+              });
+              console.log('[SW] Displayed backup alarm notification for alarm:', alarmId);
+            }
+            resolve();
+          }, delay);
+          activeTimeouts.set(alarmId, tid);
+        })
+      );
     }
   }
 
   if (event.data.type === 'cancel-local') {
-    const notifications = await self.registration.getNotifications({ tag: `wakeit-alarm-local-${event.data.alarm_id}` });
-    notifications.forEach(n => n.close());
+    const alarmId = event.data.alarm_id;
+    if (activeTimeouts.has(alarmId)) {
+      clearTimeout(activeTimeouts.get(alarmId));
+      activeTimeouts.delete(alarmId);
+      console.log('[SW] Cancelled backup setTimeout for alarm:', alarmId);
+    }
+    // Also close any showing notifications for this alarm
+    const notifications = await self.registration.getNotifications();
+    notifications.forEach(n => {
+      if (n.data && n.data.alarm_id === alarmId) {
+        n.close();
+      }
+    });
   }
 });
 

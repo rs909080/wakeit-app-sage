@@ -148,6 +148,7 @@ Deno.serve(async (req) => {
           created_by: String(alarm.created_by || ""),
           required_taps: String(alarm.required_taps || 1),
           difficulty: String(alarm.difficulty || 'easy'),
+          alarm_time: String(alarm.alarm_time),
         },
         android: {
           priority: "high",
